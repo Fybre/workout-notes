@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -33,6 +33,7 @@ export default function SelectExerciseScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isReady: dbReady } = useDatabase();
+  const { date: paramDate } = useLocalSearchParams<{ date?: string }>();
 
   useEffect(() => {
     if (!dbReady) return;
@@ -97,10 +98,14 @@ export default function SelectExerciseScreen() {
   };
 
   const handleSelectExercise = (item: ExerciseItem) => {
-    // Navigate to enter-exercise modal with exercise name and type as params
+    // Navigate to enter-exercise modal with exercise name, type, and date as params
     router.push({
       pathname: "/enter-exercise",
-      params: { exerciseName: item.name, exerciseType: item.type },
+      params: {
+        exerciseName: item.name,
+        exerciseType: item.type,
+        date: paramDate || new Date().toISOString().split("T")[0],
+      },
     });
   };
 

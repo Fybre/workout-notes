@@ -1,13 +1,13 @@
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Text as RNText,
+  View as RNView,
   ScrollView,
   StyleSheet,
-  Text as RNText,
   TouchableOpacity,
-  View as RNView,
 } from "react-native";
 import {
   GestureHandlerRootView,
@@ -28,39 +28,81 @@ export default function HomeScreen() {
   const colors = Colors[colorScheme ?? "light"];
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const { isReady: dbReady } = useDatabase();
+  const { date: paramDate } = useLocalSearchParams<{ date?: string }>();
 
-  // Load today's exercises when screen comes into focus and db is ready
+  // Get selected date from URL params or use today
+  const selectedDate = paramDate ? new Date(paramDate) : new Date();
+
+  // Get the date string for queries (stable reference)
+  const dateStr = selectedDate.toISOString().split("T")[0];
+
+  // Load exercises for selected date when screen comes into focus and db is ready
   useFocusEffect(
     useCallback(() => {
-      if (!dbReady) return;
+      console.log(
+        `[DEBUG] useFocusEffect triggered - dbReady: ${dbReady}, dateStr: ${dateStr}`,
+      );
 
-      const loadExercises = async () => {
+      if (!dbReady) {
+        console.log("[DEBUG] Database not ready, skipping load");
+        return;
+      }
+
+      // Add debounce to prevent rapid firing when changing dates quickly
+      // Reduced to 10ms for monitoring - can be removed later if stable
+      const loadExercisesWithDebounceTimer = setTimeout(async () => {
+        console.log(`[DEBUG] Starting to load exercises for date: ${dateStr}`);
         try {
-          const today = new Date().toISOString().split("T")[0];
-          const data = await getExercisesForDate(today);
+          const startTime = Date.now();
+          const data = await getExercisesForDate(dateStr);
+          const endTime = Date.now();
+          console.log(
+            `[DEBUG] Successfully loaded ${data.length} exercises in ${endTime - startTime}ms`,
+          );
           setExercises(
             data.map((ex) => ({ ...ex, type: ex.type as ExerciseType })),
           );
         } catch (error) {
-          console.error("Failed to load exercises:", error);
+          console.error("[DEBUG] Failed to load exercises:", error);
+          console.error(
+            "[DEBUG] Error details:",
+            JSON.stringify(error, null, 2),
+          );
           setExercises([]);
         }
-      };
+      }, 10); // 10ms debounce for monitoring
 
-      loadExercises();
-    }, [dbReady]),
+      return () => clearTimeout(loadExercisesWithDebounceTimer);
+    }, [dbReady, dateStr]),
   );
 
-  const today = new Date();
-  const dateString = today.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
+  const dateString = selectedDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
     day: "numeric",
     year: "numeric",
   });
 
+  // Check if selected date is today
+  const isToday =
+    selectedDate.toISOString().split("T")[0] ===
+    new Date().toISOString().split("T")[0];
+
+  // Handle tap on date header to reset to today
+  const handleDateHeaderTap = () => {
+    console.log("[DEBUG] Date header tapped, resetting to today");
+    // Remove date parameter to show today's exercises
+    router.navigate({
+      pathname: "/(tabs)",
+      params: {}, // No date parameter = today
+    });
+  };
+
   const handleStartExercise = () => {
-    router.push("/select-exercise");
+    router.push({
+      pathname: "/select-exercise",
+      params: { date: dateStr },
+    });
   };
 
   const handleExerciseTap = (exercise: Exercise) => {
@@ -91,8 +133,7 @@ export default function HomeScreen() {
             try {
               await deleteExercise(exerciseId);
               // Refresh the exercises list
-              const today = new Date().toISOString().split("T")[0];
-              const updatedExercises = await getExercisesForDate(today);
+              const updatedExercises = await getExercisesForDate(dateStr);
               setExercises(
                 updatedExercises.map((ex) => ({
                   ...ex,
@@ -136,11 +177,17 @@ export default function HomeScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Header: Today's Date */}
+        {/* Header: Today's Date - Tappable to reset to today */}
         <View style={styles.header}>
-          <Text style={[styles.dateText, { color: colors.text }]}>
-            {dateString}
-          </Text>
+          <TouchableOpacity
+            onPress={handleDateHeaderTap}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 20, right: 20 }}
+          >
+            <Text style={[styles.dateText, { color: colors.text }]}>
+              {dateString}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Exercise List */}
@@ -198,7 +245,9 @@ export default function HomeScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Text style={[styles.emptyText, { color: colors.text }]}>
-                No exercises yet today
+                {isToday
+                  ? "No exercises yet today"
+                  : "No exercises on this day"}
               </Text>
               <Text
                 style={[styles.emptySubtext, { color: colors.textSecondary }]}
@@ -239,10 +288,13 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     paddingHorizontal: 20,
     paddingBottom: 10,
+    alignItems: "center",
+    borderBottomWidth: 1,
   },
   dateText: {
     fontSize: 24,
     fontWeight: "600",
+    textAlign: "center",
   },
   listContainer: {
     flex: 1,

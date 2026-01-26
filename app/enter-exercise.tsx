@@ -51,11 +51,13 @@ export default function EnterWorkoutScreen() {
     exerciseId: paramExerciseId,
     exerciseType: paramExerciseType,
     exerciseSets: paramSets,
+    date: paramDate,
   } = useLocalSearchParams<{
     exerciseName: string;
     exerciseId?: string;
     exerciseType?: ExerciseType;
     exerciseSets?: string;
+    date?: string;
   }>();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -147,7 +149,9 @@ export default function EnterWorkoutScreen() {
     // Save exercise on first set
     if (!exerciseSaved) {
       try {
-        const today = new Date().toISOString().split("T")[0];
+        // Use the passed date parameter or fall back to today's date
+        const exerciseDate =
+          paramDate || new Date().toISOString().split("T")[0];
 
         // Get or create exercise definition
         let definition = await getExerciseDefinitionByName(
@@ -182,7 +186,7 @@ export default function EnterWorkoutScreen() {
           await addExerciseWithDefinition({
             id: exerciseId,
             definitionId: definition.id,
-            date: today,
+            date: exerciseDate,
           });
         } else {
           throw new Error("Failed to create exercise definition");
@@ -277,8 +281,12 @@ export default function EnterWorkoutScreen() {
       // Came from select-exercise and no sets added - go back to select-exercise
       router.back();
     } else {
-      // Either came from home screen or sets were added - go to home screen
-      router.replace("/");
+      // Either came from home screen or sets were added - go to home screen with the same date
+      const dateToReturn = paramDate || new Date().toISOString().split("T")[0];
+      router.replace({
+        pathname: "/(tabs)",
+        params: { date: dateToReturn },
+      });
     }
   };
 

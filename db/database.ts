@@ -1,58 +1,17 @@
 import { Set } from "@/types/workout";
 import * as SQLite from "expo-sqlite";
+import { useSQLiteContext } from "expo-sqlite";
 import { INITIAL_EXERCISE_DEFINITIONS } from "./seedData";
 
-const DATABASE_NAME = "workout.db";
-
+// Reference to the database instance managed by SQLiteProvider
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
-// Initialize database
-export async function initializeDatabase() {
-  const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+// Called by SQLiteProvider's onInit - receives the managed database instance
+export async function initializeSchema(db: SQLite.SQLiteDatabase) {
+  console.log("[DEBUG] Initializing database schema...");
 
-  // Check if we need to migrate to new schema
-  let needsMigration = false;
-
-  try {
-    // Check if old exercises table exists without definitionId column
-    const result = await db.getFirstAsync<{ count: number }>(
-      "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='exercises'",
-    );
-
-    if (result && result.count > 0) {
-      // Check if definitionId column exists
-      const columnResult = await db.getFirstAsync<{ count: number }>(
-        "SELECT COUNT(*) as count FROM pragma_table_info('exercises') WHERE name='definitionId'",
-      );
-
-      if (!columnResult || columnResult.count === 0) {
-        needsMigration = true;
-      }
-    }
-  } catch (error) {
-    console.log("Error checking schema, assuming new database:", error);
-    needsMigration = false;
-  }
-
-  if (needsMigration) {
-    // Drop old tables and create new schema
-    console.log("Migrating to new database schema...");
-    try {
-      // Disable foreign keys temporarily for migration
-      await db.execAsync("PRAGMA foreign_keys = OFF;");
-
-      // Drop tables in reverse order due to foreign key constraints
-      await db.execAsync("DROP TABLE IF EXISTS sets");
-      await db.execAsync("DROP TABLE IF EXISTS exercises");
-
-      // Re-enable foreign keys
-      await db.execAsync("PRAGMA foreign_keys = ON;");
-    } catch (error) {
-      console.log("Error during migration:", error);
-      // If migration fails, we'll continue with new tables
-      // The CREATE TABLE IF NOT EXISTS will handle this
-    }
-  }
+  // Store reference for use in non-component code
+  dbInstance = db;
 
   // Create new tables
   await db.execAsync(`
@@ -91,22 +50,24 @@ export async function initializeDatabase() {
   `);
 
   // Seed initial exercise definitions
-  await seedInitialExerciseDefinitions();
+  await seedInitialExerciseDefinitions(db);
 
-  dbInstance = db;
-  return db;
+  console.log("[DEBUG] Database initialization completed successfully");
 }
 
-export async function getDatabase() {
+export function getDatabase() {
   if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync(DATABASE_NAME);
+    throw new Error("Database not initialized. Ensure SQLiteProvider is mounted.");
   }
   return dbInstance;
 }
 
+// Hook for components to get the database context directly
+export { useSQLiteContext };
+
 // Set operations
 export async function addSet(exerciseId: string, set: Set) {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   await db.runAsync(
     "INSERT INTO sets (id, exerciseId, weight, reps, distance, time, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -123,7 +84,7 @@ export async function addSet(exerciseId: string, set: Set) {
 }
 
 export async function getSetsForExercise(exerciseId: string): Promise<Set[]> {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   const sets = await db.getAllAsync<Set>(
     "SELECT * FROM sets WHERE exerciseId = ? ORDER BY timestamp ASC",
@@ -134,7 +95,7 @@ export async function getSetsForExercise(exerciseId: string): Promise<Set[]> {
 }
 
 export async function updateSet(setId: string, updates: Partial<Set>) {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   const updateFields = [];
   const params = [];
@@ -165,13 +126,13 @@ export async function updateSet(setId: string, updates: Partial<Set>) {
 }
 
 export async function deleteSet(setId: string) {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   await db.runAsync("DELETE FROM sets WHERE id = ?", [setId]);
 }
 
 export async function deleteExercise(exerciseId: string) {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   // First delete all sets associated with this exercise
   await db.runAsync("DELETE FROM sets WHERE exerciseId = ?", [exerciseId]);
@@ -189,7 +150,7 @@ export async function addExerciseDefinition(definition: {
   unit: string;
   description?: string;
 }) {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   await db.runAsync(
     "INSERT INTO exercise_definitions (id, name, category, type, unit, description, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -215,7 +176,7 @@ export async function getAllExerciseDefinitions(): Promise<
     description: string | null;
   }[]
 > {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   return await db.getAllAsync<{
     id: string;
@@ -235,7 +196,7 @@ export async function getExerciseDefinitionByName(name: string): Promise<{
   unit: string;
   description: string | null;
 } | null> {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   const results = await db.getAllAsync<any>(
     "SELECT * FROM exercise_definitions WHERE name = ? LIMIT 1",
@@ -251,7 +212,7 @@ export async function addExerciseWithDefinition(exercise: {
   definitionId: string;
   date: string;
 }) {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   await db.runAsync(
     "INSERT INTO exercises (id, definitionId, date, createdAt) VALUES (?, ?, ?, ?)",
@@ -270,39 +231,108 @@ export async function getExercisesForDate(date: string): Promise<
     sets: Set[];
   }[]
 > {
-  const db = await getDatabase();
+  console.log(`[DEBUG] getExercisesForDate called with date: ${date}`);
+  const startTime = Date.now();
+  const db = getDatabase();
 
-  const exercises = await db.getAllAsync<{
-    id: string;
+  // Single optimized query with JOIN to fetch exercises and their sets in one go
+  const results = await db.getAllAsync<{
+    exercise_id: string;
     definitionId: string;
     date: string;
     createdAt: number;
     name: string;
     type: string;
+    set_id: string;
+    weight: number | null;
+    reps: number | null;
+    distance: number | null;
+    time: number | null;
+    timestamp: number;
   }>(
-    `SELECT e.id, e.definitionId, e.date, e.createdAt,
-            ed.name, ed.type
+    `SELECT e.id as exercise_id, e.definitionId, e.date, e.createdAt,
+            ed.name, ed.type,
+            s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
      FROM exercises e
      JOIN exercise_definitions ed ON e.definitionId = ed.id
+     LEFT JOIN sets s ON e.id = s.exerciseId
      WHERE e.date = ?
-     ORDER BY e.createdAt ASC`,
+     ORDER BY e.createdAt ASC, s.timestamp ASC`,
     [date],
   );
 
-  // Fetch sets for each exercise
-  const exercisesWithSets = await Promise.all(
-    exercises.map(async (ex) => ({
-      id: ex.id,
-      definitionId: ex.definitionId,
-      name: ex.name,
-      type: ex.type,
-      date: ex.date,
-      createdAt: ex.createdAt,
-      sets: await getSetsForExercise(ex.id),
-    })),
+  const endTime = Date.now();
+  console.log(
+    `[DEBUG] Query completed in ${endTime - startTime}ms, found ${results.length} rows`,
   );
 
+  // Group results by exercise
+  const exercisesMap = new Map<
+    string,
+    {
+      id: string;
+      definitionId: string;
+      name: string;
+      type: string;
+      date: string;
+      createdAt: number;
+      sets: Set[];
+    }
+  >();
+
+  for (const row of results) {
+    if (!exercisesMap.has(row.exercise_id)) {
+      exercisesMap.set(row.exercise_id, {
+        id: row.exercise_id,
+        definitionId: row.definitionId,
+        name: row.name,
+        type: row.type,
+        date: row.date,
+        createdAt: row.createdAt,
+        sets: [],
+      });
+    }
+
+    const exercise = exercisesMap.get(row.exercise_id)!;
+
+    // Add set if it exists (LEFT JOIN may return null for exercises with no sets)
+    if (row.set_id) {
+      exercise.sets.push({
+        id: row.set_id,
+        weight: row.weight ?? undefined,
+        reps: row.reps ?? undefined,
+        distance: row.distance ?? undefined,
+        time: row.time ?? undefined,
+        timestamp: row.timestamp,
+      });
+    }
+  }
+
+  const exercisesWithSets = Array.from(exercisesMap.values());
+  console.log(
+    `[DEBUG] Returning ${exercisesWithSets.length} exercises with sets`,
+  );
   return exercisesWithSets;
+}
+
+/**
+ * Get all dates that have exercises within a date range
+ * Used for marking calendar dates
+ */
+export async function getDatesWithExercises(
+  startDate: string,
+  endDate: string,
+): Promise<string[]> {
+  const db = getDatabase();
+
+  const results = await db.getAllAsync<{ date: string }>(
+    `SELECT DISTINCT date FROM exercises
+     WHERE date >= ? AND date <= ?
+     ORDER BY date ASC`,
+    [startDate, endDate],
+  );
+
+  return results.map((r) => r.date);
 }
 
 // Get the most recent exercise for a given exercise name (excluding today if specified)
@@ -318,7 +348,7 @@ export async function getLastExerciseByName(
   createdAt: number;
   sets: Set[];
 } | null> {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   let exercise: {
     id: string;
@@ -382,7 +412,7 @@ export async function getLastExerciseByName(
 
 // Utility
 export async function clearAllData() {
-  const db = await getDatabase();
+  const db = getDatabase();
 
   await db.execAsync(`
     DELETE FROM sets;
@@ -392,9 +422,7 @@ export async function clearAllData() {
 }
 
 // Seed initial exercise definitions
-async function seedInitialExerciseDefinitions() {
-  const db = dbInstance || (await getDatabase());
-
+async function seedInitialExerciseDefinitions(db: SQLite.SQLiteDatabase) {
   // Check if we already have definitions
   const count = await db.getFirstAsync<{ count: number }>(
     "SELECT COUNT(*) as count FROM exercise_definitions",

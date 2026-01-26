@@ -12,8 +12,8 @@ import { View } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
-import { DatabaseProvider } from "@/contexts/DatabaseContext";
 import Colors from "@/constants/Colors";
+import { DatabaseProvider } from "@/contexts/DatabaseContext";
 
 // Custom themes matching our color palette
 const CustomLightTheme = {
@@ -143,6 +143,19 @@ function RootLayoutNav() {
                   backgroundColor: colors.background,
                 },
                 animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="calendar"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.background,
+                },
+                animation: "slide_from_left",
+                gestureEnabled: true,
+                gestureDirection: "horizontal",
               }}
             />
           </Stack>
