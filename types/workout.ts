@@ -12,7 +12,8 @@ export type ExerciseType =
   | "weight"
   | "reps"
   | "distance"
-  | "time";
+  | "time_duration"  // Higher is better (planks, holds)
+  | "time_speed";    // Lower is better (sprints)
 
 export interface Set {
   id: string;
@@ -21,6 +22,7 @@ export interface Set {
   distance?: number;
   time?: number;
   timestamp: number;
+  isPersonalBest?: boolean; // Computed field, not stored in DB
 }
 
 export interface Exercise {

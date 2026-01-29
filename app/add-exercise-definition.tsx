@@ -60,10 +60,9 @@ export default function AddExerciseDefinitionScreen() {
     { label: "Weight Only", value: "weight" },
     { label: "Reps Only", value: "reps" },
     { label: "Distance Only", value: "distance" },
-    { label: "Time Only", value: "time" },
+    { label: "Time (Duration)", value: "time_duration" },
+    { label: "Time (Speed)", value: "time_speed" },
   ];
-
-  const units = ["kg", "lbs", "km", "miles", "meters", "yards"];
 
   const handleSave = async () => {
     if (!exercise.name.trim()) {

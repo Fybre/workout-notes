@@ -1,4 +1,5 @@
 import type { ExerciseType, Set } from "@/types";
+import { kgToLbs, formatWeight, formatDistance } from "./units";
 
 /**
  * Format seconds into a human-readable duration string
@@ -12,31 +13,55 @@ export function formatTime(seconds: number): string {
 
 /**
  * Format a set for display based on exercise type
+ * Weight is always stored in kg, converted to user's unit for display
  */
 export function formatSetForDisplay(
   exerciseType: ExerciseType,
   set: Partial<Set>,
+  options?: { weightUnit?: "kg" | "lbs"; distanceUnit?: "km" | "miles" }
 ): string {
+  const weightUnit = options?.weightUnit ?? "kg";
+  const distanceUnit = options?.distanceUnit ?? "km";
+
+  // Helper to format weight in user's unit
+  const formatWeightValue = (kg: number | undefined | null): string => {
+    if (kg === undefined || kg === null) return "0";
+    if (weightUnit === "lbs") {
+      return kgToLbs(kg).toFixed(1);
+    }
+    return kg.toFixed(1);
+  };
+
+  // Helper to format distance in user's unit
+  const formatDistanceValue = (km: number | undefined | null): string => {
+    if (km === undefined || km === null) return "0";
+    if (distanceUnit === "miles") {
+      return (km * 0.621371).toFixed(2);
+    }
+    return km.toFixed(2);
+  };
+
   switch (exerciseType) {
     case "weight_reps":
-      return `${set.weight} kg × ${set.reps}`;
+      return `${formatWeightValue(set.weight)} ${weightUnit} × ${set.reps}`;
     case "distance_time":
-      return `${set.distance}km in ${formatTime(set.time ?? 0)}`;
+      return `${formatDistanceValue(set.distance)}${distanceUnit === "km" ? "km" : "mi"} in ${formatTime(set.time ?? 0)}`;
     case "weight_distance":
-      return `${set.weight} kg × ${set.distance} km`;
+      return `${formatWeightValue(set.weight)} ${weightUnit} × ${formatDistanceValue(set.distance)} ${distanceUnit === "km" ? "km" : "mi"}`;
     case "weight_time":
-      return `${set.weight} kg for ${formatTime(set.time ?? 0)}`;
+      return `${formatWeightValue(set.weight)} ${weightUnit} for ${formatTime(set.time ?? 0)}`;
     case "reps_distance":
-      return `${set.reps} × ${set.distance} km`;
+      return `${set.reps} × ${formatDistanceValue(set.distance)} ${distanceUnit === "km" ? "km" : "mi"}`;
     case "reps_time":
       return `${set.reps} in ${formatTime(set.time ?? 0)}`;
     case "weight":
-      return `${set.weight} kg`;
+      return `${formatWeightValue(set.weight)} ${weightUnit}`;
     case "reps":
       return `${set.reps}`;
     case "distance":
-      return `${set.distance} km`;
-    case "time":
+      return `${formatDistanceValue(set.distance)} ${distanceUnit === "km" ? "km" : "mi"}`;
+    case "time_duration":
+    case "time_speed":
       return formatTime(set.time ?? 0);
     default:
       return "Unknown format";
@@ -74,4 +99,32 @@ export function validateSet(
     (!fields.distance || (set.distance ?? 0) > 0) &&
     (!fields.time || (set.time ?? 0) > 0)
   );
+}
+
+/**
+ * Calculate estimated 1RM using the Epley formula
+ * Formula: 1RM = weight × (1 + reps/30)
+ * Only valid for reps between 1 and 10 (becomes less accurate above 10)
+ */
+export function calculateOneRepMax(weight: number, reps: number): number | null {
+  // Only calculate for valid range (1-10 reps)
+  if (reps < 1 || reps > 10 || weight <= 0) {
+    return null;
+  }
+  // If actually did 1 rep, that's the 1RM
+  if (reps === 1) {
+    return weight;
+  }
+  return weight * (1 + reps / 30);
+}
+
+/**
+ * Format 1RM value for display
+ */
+export function formatOneRepMax(oneRM: number | null, weightUnit: "kg" | "lbs" = "kg"): string {
+  if (oneRM === null) return "N/A";
+  if (weightUnit === "lbs") {
+    return `${kgToLbs(oneRM).toFixed(1)} lbs`;
+  }
+  return `${oneRM.toFixed(1)} kg`;
 }

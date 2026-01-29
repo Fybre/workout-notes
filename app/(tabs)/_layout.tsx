@@ -1,43 +1,38 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Tabs, useRouter } from "expo-router";
+import { Tabs } from "expo-router";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
+import { addDays, parseDateParam } from "@/utils/date";
 
 // Custom tab bar with date navigation
-function CustomTabBar({ state }: BottomTabBarProps) {
-  const router = useRouter();
+function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
 
-  // Get current date from route params
-  const currentRoute = state.routes[state.index];
-  const currentDateParam = (currentRoute.params as { date?: string })?.date;
-  const currentDate = currentDateParam
-    ? new Date(currentDateParam)
-    : new Date();
+  // Get current date from the active tab's params
+  const activeRoute = state.routes[state.index];
+  const params = activeRoute.params as { date?: string } | undefined;
+  const currentDate = parseDateParam(params?.date);
+
+
 
   const handlePrevDay = () => {
-    const prevDate = new Date(currentDate);
-    prevDate.setDate(prevDate.getDate() - 1);
-    router.setParams({ date: prevDate.toISOString().split("T")[0] });
+    const prevDate = addDays(currentDate, -1);
+    navigation.setParams({ date: prevDate });
   };
 
   const handleNextDay = () => {
-    const nextDate = new Date(currentDate);
-    nextDate.setDate(nextDate.getDate() + 1);
-    router.setParams({ date: nextDate.toISOString().split("T")[0] });
+    const nextDate = addDays(currentDate, 1);
+    navigation.setParams({ date: nextDate });
   };
 
   const handleCalendarPress = () => {
-    router.push({
-      pathname: "/calendar",
-      params: { currentDate: currentDate.toISOString().split("T")[0] },
-    } as any);
+    navigation.navigate("calendar", { currentDate });
   };
 
   return (
@@ -109,9 +104,6 @@ const styles = StyleSheet.create({
 });
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
-
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -120,12 +112,6 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" />
-      <Tabs.Screen
-        name="two"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }

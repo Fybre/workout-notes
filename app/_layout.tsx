@@ -14,6 +14,8 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
 import { DatabaseProvider } from "@/contexts/DatabaseContext";
+import { ThemeProvider as CustomThemeProvider } from "@/contexts/ThemeContext";
+import { UnitProvider } from "@/contexts/UnitContext";
 
 // Custom themes matching our color palette
 const CustomLightTheme = {
@@ -48,7 +50,7 @@ const CustomDarkTheme = {
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
+  ErrorBoundary
 } from "expo-router";
 
 export const unstable_settings = {
@@ -80,7 +82,13 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <CustomThemeProvider>
+      <UnitProvider>
+        <RootLayoutNav />
+      </UnitProvider>
+    </CustomThemeProvider>
+  );
 }
 
 function RootLayoutNav() {
@@ -156,6 +164,17 @@ function RootLayoutNav() {
                 animation: "slide_from_left",
                 gestureEnabled: true,
                 gestureDirection: "horizontal",
+              }}
+            />
+            <Stack.Screen
+              name="settings-modal"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.background,
+                },
+                animation: "slide_from_bottom",
               }}
             />
           </Stack>

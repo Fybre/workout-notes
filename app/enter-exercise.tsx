@@ -1,15 +1,19 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
+  Modal,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
 } from "react-native";
 
+import Celebration from "@/components/Celebration";
 import EditSetModal from "@/components/EditSetModal";
+import RestTimerModal from "@/components/RestTimerModal";
 import { Text, View } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
@@ -19,21 +23,36 @@ import {
   addSet,
   deleteSet,
   getExerciseDefinitionByName,
+  getExerciseHistoryWithSets,
   getLastExerciseByName,
+  getPersonalBestForExercise,
   updateSet,
 } from "@/db/database";
-import type { ExerciseType } from "@/types/workout";
+import type { ExerciseType, Set } from "@/types/workout";
+import { getToday, parseDateParam } from "@/utils/date";
 import {
+  calculateOneRepMax,
+  formatOneRepMax,
   formatSetForDisplay,
   getExerciseTypeFields,
   validateSet,
 } from "@/utils/format";
 import { generateId } from "@/utils/id";
+import { useUnits } from "@/contexts/UnitContext";
+import {
+  kgToLbs,
+  lbsToKg,
+  formatWeight,
+} from "@/utils/units";
+import { isNewPersonalBest } from "@/utils/pb-utils";
 
-/**
- * Increment constants for +/- buttons
- */
-const WEIGHT_INCREMENT = 2.5;
+const REST_TIMER_SETTINGS_KEY = "@rest_timer_settings";
+
+interface RestTimerSettings {
+  autoStart: boolean;
+  defaultTime: number;
+}
+
 const REPS_INCREMENT = 1;
 
 interface WorkoutSet {
@@ -51,7 +70,7 @@ export default function EnterWorkoutScreen() {
     exerciseId: paramExerciseId,
     exerciseType: paramExerciseType,
     exerciseSets: paramSets,
-    date: paramDate,
+    date: dateParam,
   } = useLocalSearchParams<{
     exerciseName: string;
     exerciseId?: string;
@@ -62,7 +81,15 @@ export default function EnterWorkoutScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  const [weight, setWeight] = useState<number>(0);
+  // Get user's unit preference
+  const { weightUnit, distanceUnit, weightIncrement } = useUnits();
+
+  // Parse date from params using centralized utility
+  const exerciseDate = parseDateParam(dateParam);
+  const today = getToday();
+
+  // Weight is stored internally in kg, converted for display/input
+  const [weightKg, setWeightKg] = useState<number>(0);
   const [reps, setReps] = useState<number>(0);
   const [distance, setDistance] = useState<number>(0);
   const [time, setTime] = useState<number>(0);
@@ -93,6 +120,27 @@ export default function EnterWorkoutScreen() {
   const [editingSet, setEditingSet] = useState<WorkoutSet | null>(null);
   const [exerciseId] = useState(() => paramExerciseId || generateId());
   const [exerciseSaved, setExerciseSaved] = useState(() => !!paramExerciseId);
+  const [personalBest, setPersonalBest] = useState<Set | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [newPBSet, setNewPBSet] = useState<WorkoutSet | null>(null);
+  const [exerciseDescription, setExerciseDescription] = useState<string | null>(
+    null,
+  );
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [exerciseHistory, setExerciseHistory] = useState<
+    { date: string; sets: Set[] }[]
+  >([]);
+  const [estimatedOneRM, setEstimatedOneRM] = useState<number | null>(null);
+
+  // Rest timer state
+  const [restTimerSettings, setRestTimerSettings] = useState<RestTimerSettings>(
+    {
+      autoStart: false,
+      defaultTime: 60,
+    },
+  );
+  const [showRestTimer, setShowRestTimer] = useState(false);
+  const [autoStartTimer, setAutoStartTimer] = useState(false);
 
   // Populate input values based on history
   useEffect(() => {
@@ -103,7 +151,7 @@ export default function EnterWorkoutScreen() {
           const parsedSets = JSON.parse(paramSets);
           if (parsedSets.length > 0) {
             const lastSet = parsedSets[parsedSets.length - 1];
-            setWeight(lastSet.weight ?? 0);
+            setWeightKg(lastSet.weight ?? 0);
             setReps(lastSet.reps ?? 0);
             setDistance(lastSet.distance ?? 0);
             setTime(lastSet.time ?? 0);
@@ -116,13 +164,12 @@ export default function EnterWorkoutScreen() {
 
       // Case 3: New exercise - look up last time this exercise was done
       if (exerciseName) {
-        const today = new Date().toISOString().split("T")[0];
         const lastExercise = await getLastExerciseByName(exerciseName, today);
 
         if (lastExercise && lastExercise.sets.length > 0) {
           // Use the FIRST set from the last session
           const firstSet = lastExercise.sets[0];
-          setWeight(firstSet.weight ?? 0);
+          setWeightKg(firstSet.weight ?? 0);
           setReps(firstSet.reps ?? 0);
           setDistance(firstSet.distance ?? 0);
           setTime(firstSet.time ?? 0);
@@ -132,11 +179,47 @@ export default function EnterWorkoutScreen() {
     };
 
     populateFromHistory();
-  }, [exerciseName, paramSets]);
+  }, [exerciseName, paramSets, today]);
+
+  // Load rest timer settings
+  useEffect(() => {
+    const loadRestTimerSettings = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(REST_TIMER_SETTINGS_KEY);
+        if (saved) {
+          setRestTimerSettings(JSON.parse(saved));
+        }
+      } catch (error) {
+        console.error("Failed to load rest timer settings:", error);
+      }
+    };
+
+    loadRestTimerSettings();
+  }, []);
+
+  // Fetch personal best and exercise description for this exercise
+  useEffect(() => {
+    const fetchPersonalBest = async () => {
+      if (exerciseName) {
+        const pb = await getPersonalBestForExercise(exerciseName, today);
+        setPersonalBest(pb);
+      }
+    };
+
+    const fetchExerciseDescription = async () => {
+      if (exerciseName) {
+        const definition = await getExerciseDefinitionByName(exerciseName);
+        setExerciseDescription(definition?.description || null);
+      }
+    };
+
+    fetchPersonalBest();
+    fetchExerciseDescription();
+  }, [exerciseName, today]);
 
   const handleAddSet = async () => {
     // Validate based on exercise type
-    const isValid = validateSet(exerciseType, { weight, reps, distance, time });
+    const isValid = validateSet(exerciseType, { weight: weightKg, reps, distance, time });
 
     if (!isValid) {
       Alert.alert(
@@ -149,10 +232,6 @@ export default function EnterWorkoutScreen() {
     // Save exercise on first set
     if (!exerciseSaved) {
       try {
-        // Use the passed date parameter or fall back to today's date
-        const exerciseDate =
-          paramDate || new Date().toISOString().split("T")[0];
-
         // Get or create exercise definition
         let definition = await getExerciseDefinitionByName(
           exerciseName || "Unknown",
@@ -202,11 +281,14 @@ export default function EnterWorkoutScreen() {
 
     const newSet: WorkoutSet = {
       id: generateId(),
-      weight: exerciseType.includes("weight") ? weight : undefined,
+      weight: exerciseType.includes("weight") ? weightKg : undefined,
       reps: exerciseType.includes("reps") ? reps : undefined,
       distance: exerciseType.includes("distance") ? distance : undefined,
       time: exerciseType.includes("time") ? time : undefined,
     };
+
+    // Check if this is a new personal best
+    const isPB = isNewPersonalBest(newSet, personalBest, exerciseType);
 
     // Save to database
     try {
@@ -225,17 +307,55 @@ export default function EnterWorkoutScreen() {
     }
 
     setSets([...sets, newSet]);
+
+    // If PB, update the PB display and trigger celebration
+    if (isPB) {
+      // Convert WorkoutSet to Set for the PB display
+      const pbSet: Set = {
+        id: newSet.id,
+        weight: newSet.weight,
+        reps: newSet.reps,
+        distance: newSet.distance,
+        time: newSet.time,
+        timestamp: Date.now(),
+      };
+      setPersonalBest(pbSet); // Update PB so subsequent sets compare against this new best
+      setNewPBSet(newSet);
+      setShowCelebration(true);
+
+      // Stronger haptic for PB
+      try {
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      } catch (error) {
+        console.log("Haptic feedback not available:", error);
+      }
+    } else {
+      // Regular haptic for normal set
+      try {
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      } catch (error) {
+        console.log("Haptic feedback not available:", error);
+      }
+    }
+
+    // Auto-start rest timer if enabled
+    if (restTimerSettings.autoStart) {
+      setAutoStartTimer(true);
+      setShowRestTimer(true);
+    }
+
     // Keep the current values for quick entry of another set
     // Don't reset the inputs
-
-    // Provide haptic feedback to confirm set was added
-    try {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      // Silently fail if haptics are not available/supported
-      console.log("Haptic feedback not available:", error);
-    }
   };
+
+  const handleCelebrationComplete = useCallback(() => {
+    setShowCelebration(false);
+    setNewPBSet(null);
+  }, []);
 
   const handleDeleteSet = async (setId: string) => {
     try {
@@ -251,7 +371,7 @@ export default function EnterWorkoutScreen() {
 
   const handleEditSet = (set: WorkoutSet) => {
     // Populate inputs with the selected set's values for editing
-    setWeight(set.weight || 0);
+    setWeightKg(set.weight || 0);
     setReps(set.reps || 0);
     setDistance(set.distance || 0);
     setTime(set.time || 0);
@@ -282,17 +402,18 @@ export default function EnterWorkoutScreen() {
       router.back();
     } else {
       // Either came from home screen or sets were added - go to home screen with the same date
-      const dateToReturn = paramDate || new Date().toISOString().split("T")[0];
       router.replace({
         pathname: "/(tabs)",
-        params: { date: dateToReturn },
+        params: { date: exerciseDate },
       });
     }
   };
 
   const handleWeightChange = (text: string) => {
     const num = parseFloat(text) || 0;
-    setWeight(num);
+    // Convert from user's unit to kg for storage
+    const kgValue = weightUnit === "lbs" ? lbsToKg(num) : num;
+    setWeightKg(kgValue);
   };
 
   const handleRepsChange = (text: string) => {
@@ -314,10 +435,16 @@ export default function EnterWorkoutScreen() {
   const fields = getExerciseTypeFields(exerciseType);
 
   // Check if Add Set button should be enabled
-  const canAddSet = validateSet(exerciseType, { weight, reps, distance, time });
+  const canAddSet = validateSet(exerciseType, { weight: weightKg, reps, distance, time });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Celebration Animation */}
+      <Celebration
+        visible={showCelebration}
+        onComplete={handleCelebrationComplete}
+      />
+
       {/* Header */}
       <View
         style={[
@@ -328,12 +455,78 @@ export default function EnterWorkoutScreen() {
           },
         ]}
       >
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
-          {exerciseName}
-        </Text>
-        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-          <Text style={[styles.closeText, { color: colors.tint }]}>✕</Text>
-        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <Text
+            style={[styles.headerTitle, { color: colors.text }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {exerciseName}
+          </Text>
+        </View>
+        <View style={styles.headerActions}>
+          {(exerciseDescription || exerciseHistory.length > 0) && (
+            <TouchableOpacity
+              onPress={async () => {
+                // Load exercise history when opening modal
+                if (exerciseName) {
+                  const history = await getExerciseHistoryWithSets(
+                    exerciseName,
+                    30,
+                  );
+                  setExerciseHistory(history);
+
+                  // Calculate best estimated 1RM from history
+                  if (exerciseType === "weight_reps") {
+                    let bestOneRM: number | null = null;
+                    for (const entry of history) {
+                      for (const set of entry.sets) {
+                        if (set.weight && set.reps) {
+                          const oneRM = calculateOneRepMax(set.weight, set.reps);
+                          if (oneRM && (bestOneRM === null || oneRM > bestOneRM)) {
+                            bestOneRM = oneRM;
+                          }
+                        }
+                      }
+                    }
+                    setEstimatedOneRM(bestOneRM);
+                  } else {
+                    setEstimatedOneRM(null);
+                  }
+                }
+                setShowInfoModal(true);
+              }}
+              style={styles.infoButton}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.infoIcon, { color: colors.tint }]}>ⓘ</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            onPress={() => {
+              setAutoStartTimer(false);
+              setShowRestTimer(true);
+            }}
+            style={styles.stopwatchButton}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.stopwatchIcon,
+                {
+                  color: restTimerSettings.autoStart
+                    ? colors.success
+                    : colors.tint,
+                },
+              ]}
+            >
+              ⏱️
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+            <Text style={[styles.closeText, { color: colors.tint }]}>✕</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Main Content */}
@@ -341,6 +534,26 @@ export default function EnterWorkoutScreen() {
         style={[styles.content, { backgroundColor: colors.background }]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Personal Best Display */}
+        {personalBest && (
+          <View
+            style={[
+              styles.pbContainer,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              showCelebration && styles.pbContainerNew,
+            ]}
+          >
+            <Text style={[styles.pbText, { color: colors.textSecondary }]}>
+              🏆 PB: {formatSetForDisplay(exerciseType, personalBest, { weightUnit, distanceUnit })}
+            </Text>
+            {showCelebration && (
+              <Text style={[styles.pbNewLabel, { color: colors.success }]}>
+                NEW PERSONAL BEST!
+              </Text>
+            )}
+          </View>
+        )}
+
         {/* Input Sections Container */}
         <View style={{ flexDirection: "column", gap: 4, alignItems: "center" }}>
           <View style={{ width: "80%" }}>
@@ -348,16 +561,18 @@ export default function EnterWorkoutScreen() {
             {fields.weight && (
               <View style={styles.inputSection}>
                 <Text style={[styles.label, { color: colors.text }]}>
-                  Weight (kg)
+                  Weight ({weightUnit})
                 </Text>
                 <View
                   style={[styles.inputRow, { backgroundColor: colors.surface }]}
                 >
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
-                    onPress={() =>
-                      setWeight(Math.max(0, weight - WEIGHT_INCREMENT))
-                    }
+                    onPress={() => {
+                      const currentDisplay = weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
+                      const newDisplay = Math.max(0, currentDisplay - weightIncrement);
+                      setWeightKg(weightUnit === "lbs" ? lbsToKg(newDisplay) : newDisplay);
+                    }}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
                       −
@@ -372,7 +587,7 @@ export default function EnterWorkoutScreen() {
                       ]}
                       keyboardType="decimal-pad"
                       placeholder="Weight"
-                      value={weight.toString()}
+                      value={(weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg).toString()}
                       onChangeText={handleWeightChange}
                       onBlur={() => setWeightInputVisible(false)}
                       autoFocus
@@ -385,14 +600,18 @@ export default function EnterWorkoutScreen() {
                       activeOpacity={0.7}
                     >
                       <Text style={[styles.numberText, { color: colors.text }]}>
-                        {weight === 0 ? "—" : weight.toFixed(1)}
+                        {weightKg === 0 ? "—" : (weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg).toFixed(weightUnit === "lbs" ? 1 : 1)}
                       </Text>
                     </TouchableOpacity>
                   )}
 
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
-                    onPress={() => setWeight(weight + WEIGHT_INCREMENT)}
+                    onPress={() => {
+                      const currentDisplay = weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
+                      const newDisplay = currentDisplay + weightIncrement;
+                      setWeightKg(weightUnit === "lbs" ? lbsToKg(newDisplay) : newDisplay);
+                    }}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
                       +
@@ -601,17 +820,25 @@ export default function EnterWorkoutScreen() {
                   styles.setRow,
                   { backgroundColor: colors.surface },
                   { borderColor: colors.border },
+                  personalBest?.id === set.id && styles.setRowPB,
                 ]}
                 onPress={() => handleEditSet(set)}
                 activeOpacity={0.6}
               >
-                <Text
-                  style={[styles.setNumber, { color: colors.textSecondary }]}
-                >
-                  Set {index + 1}
-                </Text>
+                <View style={styles.setInfo}>
+                  <Text
+                    style={[styles.setNumber, { color: colors.textSecondary }]}
+                  >
+                    Set {index + 1}
+                  </Text>
+                  {personalBest?.id === set.id && (
+                    <Text style={[styles.pbBadge, { color: colors.success }]}>
+                      🏆 PB
+                    </Text>
+                  )}
+                </View>
                 <Text style={[styles.setData, { color: colors.text }]}>
-                  {formatSetForDisplay(exerciseType, set)}
+                  {formatSetForDisplay(exerciseType, set, { weightUnit, distanceUnit })}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -641,6 +868,174 @@ export default function EnterWorkoutScreen() {
         }}
         onClose={() => setEditingSet(null)}
       />
+
+      {/* Rest Timer Modal */}
+      <RestTimerModal
+        visible={showRestTimer}
+        initialTime={restTimerSettings.defaultTime}
+        onClose={() => {
+          setShowRestTimer(false);
+          setAutoStartTimer(false);
+        }}
+        autoStart={autoStartTimer}
+      />
+
+      {/* Exercise Info Modal */}
+      <Modal
+        visible={showInfoModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowInfoModal(false)}
+      >
+        <View
+          style={[
+            styles.infoModalOverlay,
+            { backgroundColor: "rgba(0,0,0,0.5)" },
+          ]}
+        >
+          <View
+            style={[
+              styles.infoModalContent,
+              { backgroundColor: colors.background },
+            ]}
+          >
+            {/* Modal Header */}
+            <View
+              style={[
+                styles.infoModalHeader,
+                { borderBottomColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.infoModalTitle, { color: colors.text }]}>
+                {exerciseName}
+              </Text>
+              <TouchableOpacity onPress={() => setShowInfoModal(false)}>
+                <Text style={[styles.closeText, { color: colors.tint }]}>
+                  ✕
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.infoModalScroll}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Description Section */}
+              {exerciseDescription && (
+                <View
+                  style={[
+                    styles.descriptionSection,
+                    { borderBottomColor: colors.border },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.descriptionLabel,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Description
+                  </Text>
+                  <Text
+                    style={[styles.descriptionText, { color: colors.text }]}
+                  >
+                    {exerciseDescription}
+                  </Text>
+                </View>
+              )}
+
+              {/* Estimated 1RM Section */}
+              {exerciseType === "weight_reps" && estimatedOneRM !== null && (
+                <View
+                  style={[
+                    styles.oneRMSection,
+                    { borderBottomColor: colors.border },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.oneRMLabel,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Estimated 1 Rep Max
+                  </Text>
+                  <Text style={[styles.oneRMValue, { color: colors.tint }]}>
+                    {formatOneRepMax(estimatedOneRM, weightUnit)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.oneRMDisclaimer,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Based on your best set using the Epley formula
+                  </Text>
+                </View>
+              )}
+
+              {/* History Section */}
+              <View style={styles.historySection}>
+                <Text
+                  style={[styles.historyLabel, { color: colors.textSecondary }]}
+                >
+                  History
+                </Text>
+                {exerciseHistory.length === 0 ? (
+                  <Text
+                    style={[
+                      styles.noHistoryText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    No history yet. Complete your first workout!
+                  </Text>
+                ) : (
+                  exerciseHistory.map((entry, index) => (
+                    <View
+                      key={entry.date}
+                      style={[
+                        styles.historyEntry,
+                        index < exerciseHistory.length - 1 && {
+                          borderBottomColor: colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.historyDate, { color: colors.tint }]}
+                      >
+                        {entry.date}
+                      </Text>
+                      <View style={styles.historySets}>
+                        {entry.sets.map((set, setIndex) => (
+                          <View key={set.id} style={styles.historySetRow}>
+                            <Text
+                              style={[
+                                styles.historySetNumber,
+                                { color: colors.textSecondary },
+                              ]}
+                            >
+                              Set {setIndex + 1}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.historySetData,
+                                { color: colors.text },
+                              ]}
+                            >
+                              {formatSetForDisplay(exerciseType, set, { weightUnit, distanceUnit })}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -648,6 +1043,28 @@ export default function EnterWorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  pbContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  pbContainerNew: {
+    borderColor: "#FFD700",
+    backgroundColor: "rgba(255, 215, 0, 0.1)",
+  },
+  pbText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  pbNewLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 4,
+    letterSpacing: 0.5,
   },
   header: {
     flexDirection: "row",
@@ -658,10 +1075,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderBottomWidth: 1,
   },
+  headerTitleContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
     letterSpacing: -0.5,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  infoButton: {
+    padding: 8,
+  },
+  infoIcon: {
+    fontSize: 24,
+  },
+  stopwatchButton: {
+    padding: 8,
+  },
+  stopwatchIcon: {
+    fontSize: 24,
   },
   closeButton: {
     padding: 8,
@@ -781,13 +1219,133 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  setRowPB: {
+    borderColor: "#FFD700",
+    backgroundColor: "rgba(255, 215, 0, 0.05)",
+  },
+  setInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   setNumber: {
     fontSize: 14,
     fontWeight: "600",
     opacity: 0.5,
   },
+  pbBadge: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
   setData: {
     fontSize: 18,
     fontWeight: "600",
+  },
+  // Info Modal Styles
+  infoModalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  infoModalContent: {
+    height: "100%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  infoModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  infoModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  infoModalScroll: {
+    flex: 1,
+  },
+  descriptionSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  descriptionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  descriptionText: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  historySection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  historyLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    marginBottom: 12,
+    letterSpacing: 0.5,
+  },
+  noHistoryText: {
+    fontSize: 15,
+    fontStyle: "italic",
+    textAlign: "center",
+    paddingVertical: 20,
+  },
+  historyEntry: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  historyDate: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  historySets: {
+    gap: 4,
+  },
+  historySetRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  historySetNumber: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  historySetData: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  // 1RM Section Styles
+  oneRMSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    alignItems: "center",
+  },
+  oneRMLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  oneRMValue: {
+    fontSize: 36,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+  oneRMDisclaimer: {
+    fontSize: 12,
+    fontStyle: "italic",
   },
 });

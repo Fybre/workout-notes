@@ -1,7 +1,11 @@
 import { Set } from "@/types/workout";
+import { generateId } from "@/utils/id";
+import { compareSets } from "@/utils/pb-utils";
+import type { ExerciseType } from "@/types/workout";
 import * as SQLite from "expo-sqlite";
 import { useSQLiteContext } from "expo-sqlite";
-import { INITIAL_EXERCISE_DEFINITIONS } from "./seedData";
+import { INITIAL_EXERCISE_DEFINITIONS } from "./seedData_full";
+import { initializeSchemaVersion, runMigrations } from "./schema";
 
 // Reference to the database instance managed by SQLiteProvider
 let dbInstance: SQLite.SQLiteDatabase | null = null;
@@ -49,15 +53,24 @@ export async function initializeSchema(db: SQLite.SQLiteDatabase) {
     CREATE INDEX IF NOT EXISTS idx_exercise_definitions_name ON exercise_definitions(name);
   `);
 
+  // Initialize schema version tracking and run any pending migrations
+  await initializeSchemaVersion(db);
+  const migrationsApplied = await runMigrations(db);
+  if (migrationsApplied > 0) {
+    console.log(`[DEBUG] Applied ${migrationsApplied} migration(s)`);
+  }
+
   // Seed initial exercise definitions
-  await seedInitialExerciseDefinitions(db);
+  await seedInitialExerciseDefinitions();
 
   console.log("[DEBUG] Database initialization completed successfully");
 }
 
 export function getDatabase() {
   if (!dbInstance) {
-    throw new Error("Database not initialized. Ensure SQLiteProvider is mounted.");
+    throw new Error(
+      "Database not initialized. Ensure SQLiteProvider is mounted.",
+    );
   }
   return dbInstance;
 }
@@ -143,7 +156,7 @@ export async function deleteExercise(exerciseId: string) {
 
 // Exercise Definition operations
 export async function addExerciseDefinition(definition: {
-  id: string;
+  id?: string;
   name: string;
   category: string;
   type: string;
@@ -151,11 +164,10 @@ export async function addExerciseDefinition(definition: {
   description?: string;
 }) {
   const db = getDatabase();
-
   await db.runAsync(
     "INSERT INTO exercise_definitions (id, name, category, type, unit, description, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
     [
-      definition.id,
+      definition.id || generateId(),
       definition.name,
       definition.category,
       definition.type,
@@ -216,7 +228,12 @@ export async function addExerciseWithDefinition(exercise: {
 
   await db.runAsync(
     "INSERT INTO exercises (id, definitionId, date, createdAt) VALUES (?, ?, ?, ?)",
-    [exercise.id, exercise.definitionId, exercise.date, Date.now()],
+    [
+      exercise.id || generateId(),
+      exercise.definitionId,
+      exercise.date,
+      Date.now(),
+    ],
   );
 }
 
@@ -243,6 +260,7 @@ export async function getExercisesForDate(date: string): Promise<
     createdAt: number;
     name: string;
     type: string;
+    category: string;
     set_id: string;
     weight: number | null;
     reps: number | null;
@@ -251,7 +269,7 @@ export async function getExercisesForDate(date: string): Promise<
     timestamp: number;
   }>(
     `SELECT e.id as exercise_id, e.definitionId, e.date, e.createdAt,
-            ed.name, ed.type,
+            ed.name, ed.type, ed.category,
             s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
      FROM exercises e
      JOIN exercise_definitions ed ON e.definitionId = ed.id
@@ -274,6 +292,7 @@ export async function getExercisesForDate(date: string): Promise<
       definitionId: string;
       name: string;
       type: string;
+      category: string;
       date: string;
       createdAt: number;
       sets: Set[];
@@ -287,6 +306,7 @@ export async function getExercisesForDate(date: string): Promise<
         definitionId: row.definitionId,
         name: row.name,
         type: row.type,
+        category: row.category,
         date: row.date,
         createdAt: row.createdAt,
         sets: [],
@@ -333,6 +353,47 @@ export async function getDatesWithExercises(
   );
 
   return results.map((r) => r.date);
+}
+
+// Get personal best (single best set) for a specific exercise by name
+export async function getPersonalBestForExercise(
+  exerciseName: string,
+  excludeDate?: string,
+): Promise<Set | null> {
+  const db = getDatabase();
+
+  // First, get the exercise definition to know the type
+  const definition = await db.getFirstAsync<{ id: string; type: string }>(
+    "SELECT id, type FROM exercise_definitions WHERE name = ?",
+    [exerciseName],
+  );
+
+  if (!definition) {
+    return null;
+  }
+
+  // Get all historical sets for this exercise (excluding current date if specified)
+  const query = excludeDate
+    ? `SELECT s.* FROM sets s
+       JOIN exercises e ON s.exerciseId = e.id
+       WHERE e.definitionId = ? AND e.date != ?`
+    : `SELECT s.* FROM sets s
+       JOIN exercises e ON s.exerciseId = e.id
+       WHERE e.definitionId = ?`;
+
+  const params = excludeDate ? [definition.id, excludeDate] : [definition.id];
+
+  const sets = await db.getAllAsync<Set>(query, params);
+
+  if (sets.length === 0) {
+    return null;
+  }
+
+  // Find the best set based on exercise type
+  const exerciseType = definition.type as ExerciseType;
+  return sets.reduce((best, current) => {
+    return compareSets(current, best, exerciseType) > 0 ? current : best;
+  });
 }
 
 // Get the most recent exercise for a given exercise name (excluding today if specified)
@@ -410,19 +471,493 @@ export async function getLastExerciseByName(
   };
 }
 
-// Utility
-export async function clearAllData() {
+// Get exercise for a specific date by definition ID (to check if already exists)
+export async function getExerciseForDateByDefinition(
+  definitionId: string,
+  date: string,
+): Promise<{
+  id: string;
+  definitionId: string;
+  name: string;
+  type: string;
+  date: string;
+  createdAt: number;
+  sets: Set[];
+} | null> {
   const db = getDatabase();
 
-  await db.execAsync(`
-    DELETE FROM sets;
-    DELETE FROM exercises;
-    DELETE FROM exercise_definitions;
-  `);
+  const exercise = await db.getFirstAsync<{
+    id: string;
+    definitionId: string;
+    date: string;
+    createdAt: number;
+    name: string;
+    type: string;
+  }>(
+    `SELECT e.id, e.definitionId, e.date, e.createdAt, ed.name, ed.type
+     FROM exercises e
+     JOIN exercise_definitions ed ON e.definitionId = ed.id
+     WHERE e.definitionId = ? AND e.date = ?`,
+    [definitionId, date],
+  );
+
+  if (!exercise) {
+    return null;
+  }
+
+  const sets = await getSetsForExercise(exercise.id);
+
+  return {
+    id: exercise.id,
+    definitionId: exercise.definitionId,
+    name: exercise.name,
+    type: exercise.type,
+    date: exercise.date,
+    createdAt: exercise.createdAt,
+    sets,
+  };
+}
+
+// Get all exercises with their sets for agenda view
+export async function getAllExercisesWithSets(): Promise<
+  {
+    id: string;
+    definitionId: string;
+    name: string;
+    type: string;
+    date: string;
+    createdAt: number;
+    sets: Set[];
+  }[]
+> {
+  const db = getDatabase();
+
+  const results = await db.getAllAsync<{
+    exercise_id: string;
+    definitionId: string;
+    name: string;
+    type: string;
+    date: string;
+    createdAt: number;
+    set_id: string;
+    weight: number | null;
+    reps: number | null;
+    distance: number | null;
+    time: number | null;
+    timestamp: number;
+  }>(
+    `SELECT e.id as exercise_id, e.definitionId, e.date, e.createdAt,
+            ed.name, ed.type,
+            s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
+     FROM exercises e
+     JOIN exercise_definitions ed ON e.definitionId = ed.id
+     LEFT JOIN sets s ON e.id = s.exerciseId
+     ORDER BY e.date DESC, e.createdAt ASC, s.timestamp ASC`,
+  );
+
+  // Group results by exercise
+  const exercisesMap = new Map<
+    string,
+    {
+      id: string;
+      definitionId: string;
+      name: string;
+      type: string;
+      date: string;
+      createdAt: number;
+      sets: Set[];
+    }
+  >();
+
+  for (const row of results) {
+    if (!exercisesMap.has(row.exercise_id)) {
+      exercisesMap.set(row.exercise_id, {
+        id: row.exercise_id,
+        definitionId: row.definitionId,
+        name: row.name,
+        type: row.type,
+        date: row.date,
+        createdAt: row.createdAt,
+        sets: [],
+      });
+    }
+
+    const exercise = exercisesMap.get(row.exercise_id)!;
+
+    if (row.set_id) {
+      exercise.sets.push({
+        id: row.set_id,
+        weight: row.weight ?? undefined,
+        reps: row.reps ?? undefined,
+        distance: row.distance ?? undefined,
+        time: row.time ?? undefined,
+        timestamp: row.timestamp,
+      });
+    }
+  }
+
+  return Array.from(exercisesMap.values());
+}
+
+// Get all exercise definition IDs that have at least one set logged
+export async function getUsedExerciseIds(): Promise<string[]> {
+  const db = getDatabase();
+
+  const results = await db.getAllAsync<{ definitionId: string }>(
+    `SELECT DISTINCT e.definitionId 
+     FROM exercises e
+     INNER JOIN sets s ON e.id = s.exerciseId`,
+  );
+
+  return results.map((r) => r.definitionId);
+}
+
+// Get exercises that have been logged (have sets) with their names
+export async function getUsedExercises(): Promise<
+  { id: string; name: string; category: string; type: string }[]
+> {
+  const db = getDatabase();
+
+  const results = await db.getAllAsync<{
+    id: string;
+    name: string;
+    category: string;
+    type: string;
+  }>(
+    `SELECT DISTINCT ed.id, ed.name, ed.category, ed.type
+     FROM exercise_definitions ed
+     INNER JOIN exercises e ON ed.id = e.definitionId
+     INNER JOIN sets s ON e.id = s.exerciseId
+     ORDER BY ed.name ASC`,
+  );
+
+  return results;
+}
+
+// Get historical data for a specific exercise for charting
+export async function getExerciseHistoryForChart(
+  exerciseName: string,
+  startDate: string,
+  endDate: string,
+): Promise<
+  {
+    date: string;
+    bestWeight: number;
+    bestReps: number;
+    bestDistance: number;
+    bestTime: number;
+    totalVolume: number;
+    setCount: number;
+  }[]
+> {
+  const db = getDatabase();
+
+  // Get the exercise definition
+  const definition = await db.getFirstAsync<{
+    id: string;
+    type: string;
+  }>("SELECT id, type FROM exercise_definitions WHERE name = ?", [
+    exerciseName,
+  ]);
+
+  if (!definition) {
+    return [];
+  }
+
+  // Get all exercises with their sets for this exercise in the date range
+  const results = await db.getAllAsync<{
+    date: string;
+    weight: number | null;
+    reps: number | null;
+    distance: number | null;
+    time: number | null;
+  }>(
+    `SELECT e.date, s.weight, s.reps, s.distance, s.time
+     FROM exercises e
+     JOIN sets s ON e.id = s.exerciseId
+     WHERE e.definitionId = ? AND e.date >= ? AND e.date <= ?
+     ORDER BY e.date ASC`,
+    [definition.id, startDate, endDate],
+  );
+
+  // Group by date and calculate best values for each day
+  const groupedByDate = new Map<
+    string,
+    {
+      bestWeight: number;
+      bestReps: number;
+      bestDistance: number;
+      bestTime: number;
+      totalVolume: number;
+      setCount: number;
+    }
+  >();
+
+  for (const row of results) {
+    if (!groupedByDate.has(row.date)) {
+      groupedByDate.set(row.date, {
+        bestWeight: 0,
+        bestReps: 0,
+        bestDistance: 0,
+        bestTime: 0,
+        totalVolume: 0,
+        setCount: 0,
+      });
+    }
+
+    const dayData = groupedByDate.get(row.date)!;
+    dayData.setCount++;
+
+    // Track best single values
+    if (row.weight && row.weight > dayData.bestWeight) {
+      dayData.bestWeight = row.weight;
+    }
+    if (row.reps && row.reps > dayData.bestReps) {
+      dayData.bestReps = row.reps;
+    }
+    if (row.distance && row.distance > dayData.bestDistance) {
+      dayData.bestDistance = row.distance;
+    }
+    if (row.time && row.time > dayData.bestTime) {
+      dayData.bestTime = row.time;
+    }
+
+    // Calculate volume (weight × reps) for weight exercises
+    if (row.weight && row.reps) {
+      dayData.totalVolume += row.weight * row.reps;
+    }
+  }
+
+  // Convert to array
+  const history: {
+    date: string;
+    bestWeight: number;
+    bestReps: number;
+    bestDistance: number;
+    bestTime: number;
+    totalVolume: number;
+    setCount: number;
+  }[] = [];
+
+  for (const [date, data] of groupedByDate) {
+    history.push({
+      date,
+      ...data,
+    });
+  }
+
+  return history.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// Get detailed exercise history with all sets for info modal
+export async function getExerciseHistoryWithSets(
+  exerciseName: string,
+  limit: number = 50,
+): Promise<
+  {
+    date: string;
+    sets: Set[];
+  }[]
+> {
+  const db = getDatabase();
+
+  // Get the exercise definition
+  const definition = await db.getFirstAsync<{
+    id: string;
+    type: string;
+  }>("SELECT id, type FROM exercise_definitions WHERE name = ?", [
+    exerciseName,
+  ]);
+
+  if (!definition) {
+    return [];
+  }
+
+  // Get all exercises with their sets, ordered by date descending
+  const results = await db.getAllAsync<{
+    date: string;
+    set_id: string;
+    weight: number | null;
+    reps: number | null;
+    distance: number | null;
+    time: number | null;
+    timestamp: number;
+  }>(
+    `SELECT e.date, s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
+     FROM exercises e
+     JOIN sets s ON e.id = s.exerciseId
+     WHERE e.definitionId = ?
+     ORDER BY e.date DESC, s.timestamp ASC`,
+    [definition.id],
+  );
+
+  // Group by date
+  const groupedByDate = new Map<string, Set[]>();
+
+  for (const row of results) {
+    if (!groupedByDate.has(row.date)) {
+      groupedByDate.set(row.date, []);
+    }
+
+    groupedByDate.get(row.date)!.push({
+      id: row.set_id,
+      weight: row.weight ?? undefined,
+      reps: row.reps ?? undefined,
+      distance: row.distance ?? undefined,
+      time: row.time ?? undefined,
+      timestamp: row.timestamp,
+    });
+  }
+
+  // Convert to array and limit
+  const history: { date: string; sets: Set[] }[] = [];
+  for (const [date, sets] of groupedByDate) {
+    history.push({ date, sets });
+  }
+
+  // Sort by date descending and limit
+  return history
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, limit);
+}
+
+// Get exercise history with sets for a specific date range
+export async function getExerciseHistoryWithSetsInRange(
+  exerciseName: string,
+  startDate: string,
+  endDate: string,
+): Promise<
+  {
+    date: string;
+    sets: Set[];
+  }[]
+> {
+  const db = getDatabase();
+
+  // Get the exercise definition
+  const definition = await db.getFirstAsync<{
+    id: string;
+    type: string;
+  }>("SELECT id, type FROM exercise_definitions WHERE name = ?", [
+    exerciseName,
+  ]);
+
+  if (!definition) {
+    return [];
+  }
+
+  // Get all exercises with their sets within the date range
+  const results = await db.getAllAsync<{
+    date: string;
+    set_id: string;
+    weight: number | null;
+    reps: number | null;
+    distance: number | null;
+    time: number | null;
+    timestamp: number;
+  }>(
+    `SELECT e.date, s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
+     FROM exercises e
+     JOIN sets s ON e.id = s.exerciseId
+     WHERE e.definitionId = ? AND e.date >= ? AND e.date <= ?
+     ORDER BY e.date DESC, s.timestamp ASC`,
+    [definition.id, startDate, endDate],
+  );
+
+  // Group by date
+  const groupedByDate = new Map<string, Set[]>();
+
+  for (const row of results) {
+    if (!groupedByDate.has(row.date)) {
+      groupedByDate.set(row.date, []);
+    }
+
+    groupedByDate.get(row.date)!.push({
+      id: row.set_id,
+      weight: row.weight ?? undefined,
+      reps: row.reps ?? undefined,
+      distance: row.distance ?? undefined,
+      time: row.time ?? undefined,
+      timestamp: row.timestamp,
+    });
+  }
+
+  // Convert to array
+  const history: { date: string; sets: Set[] }[] = [];
+  for (const [date, sets] of groupedByDate) {
+    history.push({ date, sets });
+  }
+
+  // Sort by date descending
+  return history.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// New robust database clearing function that handles UNIQUE constraint issues
+export async function clearDatabase() {
+  const db = getDatabase();
+
+  try {
+    // Use a transaction to ensure atomicity
+    await db.withTransactionAsync(async () => {
+      // Drop all tables to completely reset the database
+      await db.execAsync(`
+        DROP TABLE IF EXISTS sets;
+        DROP TABLE IF EXISTS exercises;
+        DROP TABLE IF EXISTS exercise_definitions;
+      `);
+
+      // Recreate tables with the schema
+      await db.execAsync(`
+
+
+        CREATE TABLE IF NOT EXISTS exercise_definitions (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL UNIQUE,
+          category TEXT NOT NULL,
+          type TEXT NOT NULL,
+          unit TEXT NOT NULL,
+          description TEXT,
+          createdAt INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS exercises (
+          id TEXT PRIMARY KEY,
+          definitionId TEXT NOT NULL,
+          date TEXT NOT NULL,
+          createdAt INTEGER NOT NULL,
+          FOREIGN KEY(definitionId) REFERENCES exercise_definitions(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS sets (
+          id TEXT PRIMARY KEY,
+          exerciseId TEXT NOT NULL,
+          weight REAL,
+          reps INTEGER,
+          distance REAL,
+          time INTEGER,
+          timestamp INTEGER NOT NULL,
+          FOREIGN KEY(exerciseId) REFERENCES exercises(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_exercises_date ON exercises(date);
+        CREATE INDEX IF NOT EXISTS idx_sets_exerciseId ON sets(exerciseId);
+        CREATE INDEX IF NOT EXISTS idx_exercise_definitions_name ON exercise_definitions(name);
+      `);
+
+      // Clear and reseed exercise definitions
+      await seedInitialExerciseDefinitions();
+    });
+
+    console.log("[DEBUG] Database cleared and reset successfully");
+  } catch (error) {
+    console.error("[DEBUG] Failed to clear database:", error);
+    throw error;
+  }
 }
 
 // Seed initial exercise definitions
-async function seedInitialExerciseDefinitions(db: SQLite.SQLiteDatabase) {
+async function seedInitialExerciseDefinitions() {
+  const db = getDatabase();
   // Check if we already have definitions
   const count = await db.getFirstAsync<{ count: number }>(
     "SELECT COUNT(*) as count FROM exercise_definitions",
@@ -432,19 +967,14 @@ async function seedInitialExerciseDefinitions(db: SQLite.SQLiteDatabase) {
     return; // Already seeded
   }
 
-  // Use the imported seed data instead of hardcoded array
   for (const def of INITIAL_EXERCISE_DEFINITIONS) {
-    await db.runAsync(
-      "INSERT INTO exercise_definitions (id, name, category, type, unit, description, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [
-        def.id,
-        def.name,
-        def.category,
-        def.type,
-        def.unit,
-        def.description,
-        Date.now(),
-      ],
-    );
+    // Use addExerciseDefinition which handles ID generation automatically
+    await addExerciseDefinition({
+      name: def.name,
+      category: def.category,
+      type: def.type,
+      unit: def.unit,
+      description: def.description,
+    });
   }
 }
