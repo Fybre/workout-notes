@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "workout-notes",
+    "name": "Workout Notes",
     "slug": "workout-notes",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -45,8 +45,8 @@
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Allow Workout Notes to use the microphone for voice logging",
-          "speechRecognitionPermission": "Allow Workout Notes to use speech recognition for voice logging",
+          "microphonePermission": "Workout Notes uses the microphone for hands-free set logging. For example, tap the mic button and say \"100 by 10\" to log a set of 100kg for 10 reps without typing on the keypad.",
+          "speechRecognitionPermission": "Workout Notes uses speech recognition to convert your voice into workout data. For example, saying \"80 by 5\" will be recognized and logged as 80kg for 5 reps.",
           "androidRecognitionService": {
             "packageName": "com.google.android.googlequicksearchbox",
             "action": "android.speech.RecognitionService"

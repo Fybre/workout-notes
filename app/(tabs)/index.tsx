@@ -31,6 +31,7 @@ import { formatDisplayDate, isToday } from "@/utils/date";
 import { formatSetForDisplay } from "@/utils/format";
 import { useUnits } from "@/contexts/UnitContext";
 import { findBestSetId, compareSets } from "@/utils/pb-utils";
+import { kgToLbs, kmToMiles } from "@/utils/units";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -327,6 +328,55 @@ export default function HomeScreen() {
                         {exercise.sets.length === 1 ? "set" : "sets"}
                       </Text>
                     </RNView>
+                    {/* Table Layout for Sets */}
+                    <RNView style={styles.setsTable}>
+                      {/* Table Header */}
+                      <RNView style={[styles.tableRow, styles.tableHeader, { borderBottomColor: colors.border }]}>
+                        <RNText style={[styles.tableHeaderCell, styles.iconCol, { color: colors.textSecondary }]}></RNText>
+                        {(exercise.type === "weight_reps" || exercise.type === "weight_only") && (
+                          <RNText style={[styles.tableHeaderCell, styles.dataCol, { color: colors.textSecondary }]}>{weightUnit}</RNText>
+                        )}
+                        {(exercise.type === "weight_reps" || exercise.type === "reps_only") && (
+                          <RNText style={[styles.tableHeaderCell, styles.dataCol, { color: colors.textSecondary }]}>Reps</RNText>
+                        )}
+                        {(exercise.type === "distance_time" || exercise.type === "distance_only") && (
+                          <RNText style={[styles.tableHeaderCell, styles.dataCol, { color: colors.textSecondary }]}>{distanceUnit}</RNText>
+                        )}
+                        {(exercise.type === "distance_time" || exercise.type === "time_only") && (
+                          <RNText style={[styles.tableHeaderCell, styles.dataCol, { color: colors.textSecondary }]}>Time</RNText>
+                        )}
+                      </RNView>
+                      {/* Table Body */}
+                      {exercise.sets.map((set) => (
+                        <RNView key={set.id} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+                          <RNView style={[styles.iconCol, styles.iconContainerLeft]}>
+                            {set.isPersonalBest && <Text style={styles.pbIcon}>🏆</Text>}
+                            {set.note && <FontAwesome name="sticky-note" size={12} color={colors.tint} />}
+                          </RNView>
+                          {(exercise.type === "weight_reps" || exercise.type === "weight_only") && (
+                            <RNText style={[styles.tableCell, styles.dataCol, { color: colors.text }]}>
+                              {set.weight !== undefined ? (weightUnit === "lbs" ? kgToLbs(set.weight).toFixed(1) : set.weight.toFixed(1)) : "—"}
+                            </RNText>
+                          )}
+                          {(exercise.type === "weight_reps" || exercise.type === "reps_only") && (
+                            <RNText style={[styles.tableCell, styles.dataCol, { color: colors.text }]}>
+                              {set.reps !== undefined ? set.reps : "—"}
+                            </RNText>
+                          )}
+                          {(exercise.type === "distance_time" || exercise.type === "distance_only") && (
+                            <RNText style={[styles.tableCell, styles.dataCol, { color: colors.text }]}>
+                              {set.distance !== undefined ? (distanceUnit === "mi" ? kmToMiles(set.distance).toFixed(2) : set.distance.toFixed(2)) : "—"}
+                            </RNText>
+                          )}
+                          {(exercise.type === "distance_time" || exercise.type === "time_only") && (
+                            <RNText style={[styles.tableCell, styles.dataCol, { color: colors.text }]}>
+                              {set.time !== undefined ? `${Math.floor(set.time / 60)}:${(set.time % 60).toString().padStart(2, '0')}` : "—"}
+                            </RNText>
+                          )}
+                        </RNView>
+                      ))}
+                    </RNView>
+                    {/* ORIGINAL PILL LAYOUT - Uncomment to revert
                     <RNView style={styles.setsPreview}>
                       {exercise.sets.map((set) => (
                         <RNView key={set.id} style={styles.setContainer}>
@@ -350,6 +400,7 @@ export default function HomeScreen() {
                         </RNView>
                       ))}
                     </RNView>
+                    */}
                   </TouchableOpacity>
                 </Swipeable>
               ))}
@@ -488,18 +539,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 4,
   },
   exerciseName: {
     fontSize: 20,
     fontWeight: "700",
-    marginBottom: 4,
     letterSpacing: -0.5,
   },
   setCount: {
     fontSize: 14,
     fontWeight: "500",
-    marginBottom: 12,
     opacity: 0.7,
   },
   setsPreview: {
@@ -685,5 +734,51 @@ const styles = StyleSheet.create({
   },
   noteIcon: {
     marginLeft: 4,
+  },
+  // Table styles for sets display
+  setsTable: {
+    marginTop: 4,
+  },
+  tableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+  },
+  tableHeader: {
+    paddingVertical: 4,
+  },
+  tableHeaderCell: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  tableCell: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  setNumCol: {
+    width: 24,
+    textAlign: "center",
+  },
+  dataCol: {
+    flex: 1,
+    textAlign: "center",
+  },
+  iconCol: {
+    width: 44,
+    textAlign: "right",
+  },
+  iconContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 4,
+  },
+  iconContainerLeft: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    gap: 4,
   },
 });

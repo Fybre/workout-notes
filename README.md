@@ -6,13 +6,25 @@ A mobile workout tracking app built with React Native and Expo. Track your exerc
 
 ## Features
 
+### Core Tracking
 - 📊 **Exercise Tracking** - Log sets with weight, reps, distance, time, or any combination
+- 📝 **Set Notes** - Add notes to individual sets (e.g., "felt easy", "grip slipping")
+- 🏆 **Personal Bests** - Automatic PB detection with celebration animations
+- 📈 **Estimated 1RM** - Calculate your estimated one-rep max using the Epley formula
+- ⏱️ **Rest Timer** - Configurable rest timer with auto-start option between sets
+- 🎤 **Voice Logging** - Log sets hands-free with voice commands (development builds only)
+
+### Views & Navigation
 - 📅 **Calendar View** - Visual calendar showing workout days
 - 📝 **Agenda View** - Chronological list of all workouts with rest day indicators
 - 📈 **Progress Charts** - Line charts showing exercise progress over time
-- 🏆 **Personal Bests** - Automatic tracking of your best performances
-- 🔄 **Unit Support** - Switch between kg/lbs and km/miles
-- 💾 **Data Backup** - Export/restore your data via SQLite backup or CSV
+- 🗓️ **Date Navigation** - Swipe between days or tap to jump to today
+- 📋 **Table View** - Clean tabular display of sets on home screen
+
+### Data & Settings
+- 🔄 **Unit Support** - Switch between kg/lbs and km/miles with configurable increments
+- 💾 **Data Backup** - Export/restore your data via SQLite backup
+- 📤 **CSV Export** - Export all workout data to CSV for analysis
 - 🌙 **Dark Mode** - Automatic system theme detection with manual override
 - 📱 **Offline First** - All data stored locally in SQLite database
 
@@ -67,9 +79,13 @@ workout-notes/
 │   ├── enter-exercise.tsx   # Add/edit exercise screen
 │   ├── select-exercise.tsx  # Exercise picker
 │   ├── settings-modal.tsx   # Settings screen
+│   ├── about.tsx            # About/attribution screen
 │   └── _layout.tsx          # Root layout with providers
 ├── components/              # React components
 │   ├── calendar/            # Calendar-related components
+│   ├── Celebration.tsx      # PB celebration animation
+│   ├── EditSetModal.tsx     # Modal for editing sets
+│   ├── RestTimerModal.tsx   # Rest timer between sets
 │   ├── NumberInput.tsx      # Reusable number input
 │   ├── ScreenHeader.tsx     # Header component
 │   └── Themed.tsx           # Theme-aware components
@@ -79,6 +95,7 @@ workout-notes/
 │   └── UnitContext.tsx      # Unit preferences (kg/lbs)
 ├── db/                      # Database layer
 │   ├── database.ts          # Main database operations
+│   ├── backup.ts            # SQLite backup/restore
 │   ├── export.ts            # CSV export functionality
 │   └── schema.ts            # Schema migrations
 ├── hooks/                   # Custom React hooks
@@ -88,7 +105,9 @@ workout-notes/
 ├── utils/                   # Utility functions
 │   ├── date.ts              # Date utilities
 │   ├── format.ts            # Display formatting
-│   └── pb-utils.ts          # Personal best calculations
+│   ├── id.ts                # ID generation
+│   ├── pb-utils.ts          # Personal best calculations
+│   └── units.ts             # Unit conversions (kg/lbs, km/mi)
 └── assets/                  # Images, fonts, etc.
 ```
 
@@ -257,12 +276,32 @@ EXPO_PUBLIC_API_URL=https://api.example.com
 
 The app uses SQLite with the following main tables:
 
-- **exercise_definitions** - Exercise templates (name, type, category)
+- **exercise_definitions** - Exercise templates (name, type, category, description)
 - **exercises** - Logged exercises (date, reference to definition)
-- **sets** - Individual sets (weight, reps, time, distance, etc.)
+- **sets** - Individual sets (weight, reps, time, distance, note, timestamp)
 - **schema_version** - Migration tracking
 
-See [DB_SCHEMA.md](./DB_SCHEMA.md) for full details.
+### Exercise Types
+
+The app supports multiple exercise types:
+- `weight_reps` - Standard weightlifting (e.g., Bench Press: 100kg x 10)
+- `weight_only` - Weight-based without reps (e.g., Farmer's Walk: 50kg)
+- `reps_only` - Bodyweight exercises (e.g., Pull-ups: 12 reps)
+- `distance_time` - Cardio with distance and time (e.g., Running: 5km in 25:00)
+- `distance_only` - Distance-based (e.g., Swimming: 1km)
+- `time_only` - Time-based (e.g., Plank: 60s)
+
+## Voice Logging
+
+Voice logging is available in development builds (not Expo Go) and supports these patterns:
+
+- "220 by 10" → 220kg/lbs × 10 reps
+- "100 for 8" → 100kg/lbs × 8 reps
+- "50 times 12" → 50kg/lbs × 12 reps
+- "80 x 5" → 80kg/lbs × 5 reps
+- "100 by 10 with note felt easy" → Adds note to the set
+
+The voice input shows a preview before confirming, allowing you to edit values if needed.
 
 ## Testing
 
