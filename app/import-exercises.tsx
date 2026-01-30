@@ -3,11 +3,12 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-
 } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { Text, View } from "@/components/Themed";
@@ -34,6 +35,7 @@ interface ExerciseSetInfo {
   description: string;
   count: number;
   url: string;
+  isDefault?: boolean;
 }
 
 const EXERCISE_SETS: ExerciseSetInfo[] = [
@@ -45,9 +47,10 @@ const EXERCISE_SETS: ExerciseSetInfo[] = [
   },
   {
     name: "Medium Set",
-    description: "Standard workout exercises (~80 exercises)",
+    description: "Standard workout exercises (~80 exercises) — Default exercise set",
     count: 80,
     url: "https://raw.githubusercontent.com/Fybre/workout-notes/refs/heads/main/exercise_data/exercises_medium.json",
+    isDefault: true,
   },
   {
     name: "Large Set",
@@ -74,6 +77,7 @@ export default function ImportExercisesScreen() {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [importMode, setImportMode] = useState<"replace" | "merge">("merge");
   const [importing, setImporting] = useState(false);
+  const [manualFile, setManualFile] = useState<{ name: string; exercises: ExerciseDefinition[] } | null>(null);
 
   // Helper for fetch with timeout
   const fetchWithTimeout = async (url: string, timeoutMs = 30000): Promise<Response> => {
@@ -96,6 +100,90 @@ export default function ImportExercisesScreen() {
         throw new Error(`Request timed out after ${timeoutMs/1000} seconds`);
       }
       throw error;
+    }
+  };
+
+  // Manual file import
+  const handleManualImport = async () => {
+    try {
+      setLoading(true);
+      
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        setLoading(false);
+        return;
+      }
+
+      const file = result.assets[0];
+      console.log(`[Import] Selected file: ${file.name}`);
+
+      // Read file content
+      const response = await fetch(file.uri);
+      const fileContent = await response.text();
+      
+      console.log(`[Import] File size: ${fileContent.length} chars`);
+
+      // Parse JSON
+      let exercises: ExerciseDefinition[];
+      try {
+        exercises = JSON.parse(fileContent);
+      } catch (parseError) {
+        throw new Error('Invalid JSON format. Please select a valid exercise JSON file.');
+      }
+
+      if (!Array.isArray(exercises)) {
+        throw new Error('File must contain an array of exercises');
+      }
+
+      if (exercises.length === 0) {
+        throw new Error('Exercise set is empty');
+      }
+
+      // Validate exercise structure
+      const invalidExercises = exercises.filter(ex => 
+        !ex.name || !ex.category || !ex.type || !ex.unit
+      );
+      if (invalidExercises.length > 0) {
+        throw new Error(`${invalidExercises.length} exercises missing required fields (name, category, type, unit)`);
+      }
+
+      // Calculate diff
+      const currentExercises = await getAllExerciseDefinitions();
+      const existingNames = new Set(
+        currentExercises.map((ex) => ex.name.toLowerCase().trim())
+      );
+
+      const toAdd: ExerciseDefinition[] = [];
+      const existing: ExerciseDefinition[] = [];
+
+      for (const newEx of exercises) {
+        const normalizedName = newEx.name.toLowerCase().trim();
+        if (existingNames.has(normalizedName)) {
+          existing.push(newEx);
+        } else {
+          toAdd.push(newEx);
+          existingNames.add(normalizedName);
+        }
+      }
+
+      setManualFile({ name: file.name, exercises });
+      setPreview({
+        toAdd,
+        existing,
+        totalNew: toAdd.length,
+        totalExisting: existing.length,
+      });
+
+    } catch (error) {
+      console.error('[Import] Manual import error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Import Error', errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -196,12 +284,13 @@ export default function ImportExercisesScreen() {
   };
 
   const handleImport = async () => {
-    if (!selectedSet || !preview) return;
+    if ((!selectedSet && !manualFile) || !preview) return;
 
+    const sourceName = manualFile ? manualFile.name : selectedSet?.name;
     const modeText = importMode === "replace" ? "replace" : "merge with";
     Alert.alert(
       "Confirm Import",
-      `This will ${modeText} your current exercise definitions with the ${selectedSet.name}.\n\n` +
+      `This will ${modeText} your current exercise definitions with ${sourceName}.\n\n` +
         (importMode === "replace"
           ? `All ${preview.totalExisting} existing exercises will be deleted and replaced with ${preview.totalNew + preview.totalExisting} exercises from the set.`
           : `${preview.totalNew} new exercises will be added. ${preview.totalExisting} existing exercises will be kept.`),
@@ -217,7 +306,7 @@ export default function ImportExercisesScreen() {
   };
 
   const executeImport = async () => {
-    if (!selectedSet || !preview) return;
+    if ((!selectedSet && !manualFile) || !preview) return;
 
     setImporting(true);
     console.log(`[Import] Starting ${importMode} import...`);
@@ -242,18 +331,47 @@ export default function ImportExercisesScreen() {
           await db.runAsync("DELETE FROM exercise_definitions");
         });
 
-        // Fetch exercises again for replace mode
-        console.log('[Import] Fetching exercises for replace mode...');
-        const response = await fetchWithTimeout(selectedSet.url, 30000);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch: ${response.status}`);
+        // Get exercises for replace mode (from URL or manual file)
+        let exercises: ExerciseDefinition[];
+        if (manualFile) {
+          console.log('[Import] Using manual file exercises for replace mode...');
+          exercises = manualFile.exercises;
+        } else if (selectedSet) {
+          console.log('[Import] Fetching exercises for replace mode...');
+          const response = await fetchWithTimeout(selectedSet.url, 30000);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch: ${response.status}`);
+          }
+          const responseText = await response.text();
+          exercises = JSON.parse(responseText);
+        } else {
+          throw new Error('No exercise source available');
         }
-        const responseText = await response.text();
-        const exercises: ExerciseDefinition[] = JSON.parse(responseText);
-        console.log(`[Import] Adding ${exercises.length} exercises...`);
+
+        // Deduplicate exercises by name (keep first occurrence)
+        const uniqueExercises: ExerciseDefinition[] = [];
+        const seenNames = new Set<string>();
+        let duplicatesSkipped = 0;
+        
+        for (const ex of exercises) {
+          const normalizedName = ex.name.toLowerCase().trim();
+          if (seenNames.has(normalizedName)) {
+            duplicatesSkipped++;
+            console.log(`[Import] Skipping duplicate: "${ex.name}"`);
+          } else {
+            seenNames.add(normalizedName);
+            uniqueExercises.push(ex);
+          }
+        }
+        
+        if (duplicatesSkipped > 0) {
+          console.log(`[Import] Skipped ${duplicatesSkipped} duplicates, importing ${uniqueExercises.length} unique exercises`);
+        }
+        
+        console.log(`[Import] Adding ${uniqueExercises.length} exercises...`);
 
         let addedCount = 0;
-        for (const ex of exercises) {
+        for (const ex of uniqueExercises) {
           try {
             await addExerciseDefinition({
               id: generateId(),
@@ -329,6 +447,7 @@ export default function ImportExercisesScreen() {
 
   const resetPreview = () => {
     setSelectedSet(null);
+    setManualFile(null);
     setPreview(null);
     setImportMode("merge");
   };
@@ -352,7 +471,7 @@ export default function ImportExercisesScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {!selectedSet ? (
+        {!selectedSet && !manualFile ? (
           // Exercise Set Selection
           <>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
@@ -372,9 +491,16 @@ export default function ImportExercisesScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={styles.setInfo}>
-                    <Text style={[styles.setName, { color: colors.text }]}>
-                      {set.name}
-                    </Text>
+                    <View style={styles.setNameRow}>
+                      <Text style={[styles.setName, { color: colors.text }]}>
+                        {set.name}
+                      </Text>
+                      {set.isDefault && (
+                        <View style={[styles.defaultBadge, { backgroundColor: colors.success }]}>
+                          <Text style={styles.defaultBadgeText}>Default</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text
                       style={[styles.setDescription, { color: colors.textSecondary }]}
                     >
@@ -393,11 +519,38 @@ export default function ImportExercisesScreen() {
               ))}
             </View>
 
+            {/* Divider */}
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+            {/* Manual Import Section */}
+            <View style={styles.manualImportSection}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Manual Import
+              </Text>
+              <Text style={[styles.manualImportDescription, { color: colors.textSecondary }]}>
+                Have your own exercise set? Import a JSON file from your device.
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.manualImportButton,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+                onPress={handleManualImport}
+                disabled={loading}
+                activeOpacity={0.7}
+              >
+                <FontAwesome name="folder-open" size={20} color={colors.tint} />
+                <Text style={[styles.manualImportButtonText, { color: colors.text }]}>
+                  Browse for JSON File
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             {loading && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.tint} />
                 <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                  Fetching exercise set...
+                  Loading exercise set...
                 </Text>
               </View>
             )}
@@ -410,15 +563,20 @@ export default function ImportExercisesScreen() {
               <Text style={[styles.troubleshootingText, { color: colors.textSecondary }]}
               numberOfLines={0}
               >
-                If downloads fail, you can manually download the JSON files from the GitHub repository and import them via the Manage Exercises screen.
+                If downloads fail, you can manually download the JSON files from the GitHub repository and import them here later.
               </Text>
-              <Text 
-                style={[styles.urlText, { color: colors.tint }]} 
-                numberOfLines={2} 
-                ellipsizeMode="tail"
+              <TouchableOpacity
+                onPress={() => Linking.openURL('https://github.com/Fybre/workout-notes/tree/main/exercise_data')}
+                activeOpacity={0.7}
               >
-                github.com/Fybre/workout-notes/tree/main/exercise_data
-              </Text>
+                <Text 
+                  style={[styles.urlText, { color: colors.tint }]} 
+                  numberOfLines={2} 
+                  ellipsizeMode="tail"
+                >
+                  github.com/Fybre/workout-notes/tree/main/exercise_data
+                </Text>
+              </TouchableOpacity>
             </View>
           </>
         ) : (
@@ -431,7 +589,7 @@ export default function ImportExercisesScreen() {
               ]}
             >
               <Text style={[styles.selectedSetName, { color: colors.tint }]}>
-                {selectedSet.name}
+                {manualFile ? manualFile.name : selectedSet?.name}
               </Text>
               <TouchableOpacity onPress={resetPreview} disabled={importing}>
                 <Text style={[styles.changeSetText, { color: colors.textSecondary }]}>
@@ -725,10 +883,25 @@ const styles = StyleSheet.create({
   setInfo: {
     flex: 1,
   },
+  setNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 4,
+  },
   setName: {
     fontSize: 17,
     fontWeight: "700",
-    marginBottom: 4,
+  },
+  defaultBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  defaultBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
   },
   setDescription: {
     fontSize: 14,
@@ -855,6 +1028,32 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     color: "#fff",
+  },
+  divider: {
+    height: 1,
+    marginVertical: 24,
+  },
+  manualImportSection: {
+    marginBottom: 8,
+  },
+  manualImportDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  manualImportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  manualImportButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   troubleshootingSection: {
     marginTop: 32,
