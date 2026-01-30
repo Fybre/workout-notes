@@ -1,0 +1,2298 @@
+[
+  {
+    "name": "Barbell Bench Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie flat on a bench with feet planted firmly on the floor. Grip the bar slightly wider than shoulder-width, retract your shoulder blades, and press the bar up until arms are fully extended. Lower with control to mid-chest, keeping elbows tucked at roughly 45 degrees."
+  },
+  {
+    "name": "Dumbbell Bench Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on a flat bench holding dumbbells at shoulder level, palms facing forward. Press both dumbbells up until arms are straight and dumbbells nearly touch. Lower slowly with control, feeling a stretch across the chest."
+  },
+  {
+    "name": "Incline Bench Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set bench to 30-45 degree incline. Lie back with feet flat on the floor. Grip the bar and press from upper chest, extending arms fully. Lower to upper chest/clavicle area, keeping shoulder blades retracted throughout the movement."
+  },
+  {
+    "name": "Decline Bench Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Secure legs in decline bench set to 15-30 degrees. Grip bar slightly wider than shoulders and press from lower chest position. Lower bar to lower sternum, feeling engagement in lower pectoral muscles."
+  },
+  {
+    "name": "Chest Fly Machine",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with back flat against pad, arms at 90 degrees on handles. Bring handles together in an arc motion, squeezing chest at peak contraction. Return slowly with control, feeling a deep stretch without letting weights touch down."
+  },
+  {
+    "name": "Cable Crossover",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cables high and stand in center with staggered stance. Lean slightly forward, keeping core tight. Bring handles down and together in front of hips, squeezing chest. Return with control, maintaining constant tension through full range of motion."
+  },
+  {
+    "name": "Push-ups",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start in plank position with hands slightly wider than shoulders. Lower body until chest nearly touches floor, keeping core tight. Push back to starting position, fully extending arms at top. Keep body in straight line throughout."
+  },
+  {
+    "name": "Dips (Chest Focus)",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Use parallel bars and lean forward 30-45 degrees to emphasize chest. Lower until upper arms are parallel to floor or slightly below. Press up through palms, focusing on chest contraction rather than triceps."
+  },
+  {
+    "name": "Incline Dumbbell Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set bench to 30-45 degree incline. Start with dumbbells at shoulder level, palms facing forward. Press up and slightly together, squeezing upper chest at top. Lower with control to starting position."
+  },
+  {
+    "name": "Decline Dumbbell Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Secure legs in decline bench. Hold dumbbells at chest level and press up, focusing on lower chest engagement. Lower slowly with control, maintaining proper spinal alignment throughout the movement."
+  },
+  {
+    "name": "Machine Chest Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Adjust seat so handles align with mid-chest. Sit with back flat and feet on floor. Press handles forward until arms are extended, squeezing chest. Return slowly, controlling the weight without letting plates rest."
+  },
+  {
+    "name": "Pec Deck Machine",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Adjust seat so arms are parallel to floor when gripping handles. Keep slight bend in elbows throughout. Bring handles together in front of chest, squeezing at peak. Return slowly, feeling stretch across chest."
+  },
+  {
+    "name": "Wide Grip Push-ups",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place hands wider than shoulder-width, fingers pointing forward. Lower chest toward floor, flaring elbows out more than standard push-ups. Push back up, focusing on chest contraction rather than triceps."
+  },
+  {
+    "name": "Close Grip Push-ups",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Position hands directly under shoulders or slightly closer. Keep elbows tucked close to body as you lower. Push up focusing on inner chest and triceps engagement. Maintain straight body line throughout."
+  },
+  {
+    "name": "Medicine Ball Chest Pass",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold medicine ball at chest level, elbows bent. Explosively push ball forward from chest, either to partner or against wall. Catch rebound and immediately repeat. Focus on explosive chest power and quick hands."
+  },
+  {
+    "name": "Landmine Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Anchor barbell in landmine attachment or corner. Hold end of bar at chest level with both hands. Press up and forward at 45-degree angle, extending arms fully. Lower with control to upper chest."
+  },
+  {
+    "name": "Floor Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on floor with knees bent and feet flat. Hold barbell or dumbbells at chest level. Press up until arms lock out, limiting range of motion at bottom. Lower until upper arms touch floor, then press again."
+  },
+  {
+    "name": "Chest Dip Machine",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Select appropriate assist weight and kneel on pad. Grip handles and lower body by bending elbows, leaning slightly forward. Push up through palms until arms are extended, focusing on chest contraction."
+  },
+  {
+    "name": "Cable Chest Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cables at chest height, stand facing away from machine in split stance. Press handles forward from chest, extending arms fully. Return with control, maintaining constant tension throughout movement."
+  },
+  {
+    "name": "Single Arm Dumbbell Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on bench holding one dumbbell at shoulder. Press up while engaging core to prevent rotation. Lower with control, feeling deep stretch in one side of chest. Complete reps, then switch arms."
+  },
+  {
+    "name": "Plyometric Push-ups",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Perform push-up explosively, pushing hands off floor at top. Land softly and immediately go into next rep. Builds explosive power and fast-twitch muscle fibers. Modify by doing from knees if needed."
+  },
+  {
+    "name": "Spiderman Push-ups",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Perform push-up bringing one knee toward elbow at bottom. Alternate sides each rep. Engages chest, triceps, and core. Advanced variation of standard push-up."
+  },
+  {
+    "name": "Decline Push-ups",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place feet on elevated surface, hands on floor. Perform push-ups with increased difficulty due to angle. Emphasizes upper chest and shoulders more than standard push-ups."
+  },
+  {
+    "name": "Incline Push-ups",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place hands on elevated surface, feet on floor. Easier variation that emphasizes lower chest. Good for beginners or as warm-up before standard push-ups."
+  },
+  {
+    "name": "Cable Chest Fly",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cables at chest height, stand facing away from machine. Bring handles together in front of chest, keeping slight bend in elbows. Squeeze chest at peak contraction. Return slowly with control."
+  },
+  {
+    "name": "Reverse Grip Bench Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use underhand grip on barbell, hands shoulder-width apart. Press from chest, emphasizing upper chest and triceps. More shoulder-friendly than standard bench press for some lifters."
+  },
+  {
+    "name": "Dumbbell Pullover",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on bench holding one dumbbell with both hands. Start with arms extended over chest. Lower weight behind head while keeping slight bend in elbows. Feel stretch across chest, then return."
+  },
+  {
+    "name": "Chest Press Machine (Vertical)",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit upright in machine with back against pad. Press handles forward and slightly down, mimicking decline press motion. Return slowly, maintaining tension on chest muscles."
+  },
+  {
+    "name": "Chest Press Machine (Horizontal)",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with back flat against pad, feet on floor. Press handles straight forward until arms extend. Squeeze chest at top. Return with control, feeling stretch at bottom position."
+  },
+  {
+    "name": "Ring Dips",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Use gymnastics rings for instability challenge. Lean forward to emphasize chest. Lower until shoulders are below elbows, then press up. Requires significant upper body strength and stability."
+  },
+  {
+    "name": "Barbell Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Bend at hips until torso is nearly parallel to floor. Grip bar with overhand grip, hands slightly wider than shoulders. Pull bar to lower chest/upper abdomen, squeezing shoulder blades together. Lower with control."
+  },
+  {
+    "name": "Dumbbell Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place one knee and hand on bench for support. Hold dumbbell in other hand, arm extended. Pull dumbbell to hip, keeping elbow close to body and squeezing lat at top. Lower fully before next rep."
+  },
+  {
+    "name": "Pull-ups",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hang from bar with overhand grip, hands shoulder-width or wider. Pull body up until chin clears bar, focusing on driving elbows down and back. Lower with control to full arm extension."
+  },
+  {
+    "name": "Chin-ups",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hang from bar with underhand grip, hands about shoulder-width. Pull up until chin clears bar, using biceps to assist. Lower slowly with control, feeling stretch in lats at bottom position."
+  },
+  {
+    "name": "Lat Pulldown",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with thighs secured under pads. Grip bar wider than shoulders, palms facing forward. Pull bar to upper chest, driving elbows down and squeezing lats. Return slowly with arms fully extending."
+  },
+  {
+    "name": "Deadlifts",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand with feet hip-width, bar over mid-foot. Hinge at hips and grip bar just outside legs. Keep back flat, chest up. Push floor away, extending hips forward to lockout. Hinge at hips to lower bar with control."
+  },
+  {
+    "name": "T-Bar Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Straddle bar with feet shoulder-width. Bend at hips until torso is 45 degrees. Grip handles and pull toward lower chest, squeezing shoulder blades. Keep back flat and core engaged throughout movement."
+  },
+  {
+    "name": "Seated Cable Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit at cable row station with feet on platform, knees slightly bent. Grip attachment and sit upright. Pull to abdomen, driving elbows back and squeezing shoulder blades. Return with control, feeling stretch."
+  },
+  {
+    "name": "Face Pulls",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable at face height with rope attachment. Pull rope toward face, flaring elbows out to sides. Rotate hands outward at end position, squeezing rear delts and upper back. Return slowly."
+  },
+  {
+    "name": "Reverse Flyes",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Bend at hips holding dumbbells, palms facing each other. Raise arms out to sides until parallel to floor, squeezing rear delts. Keep slight bend in elbows. Lower with control."
+  },
+  {
+    "name": "One Arm Cable Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit facing cable machine, single handle attachment at mid-height. Pull handle to side of torso, rotating slightly and squeezing lat. Extend arm fully on return, feeling deep stretch in lat."
+  },
+  {
+    "name": "Straight Arm Pulldown",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand facing cable machine, bar attachment set high. Keep arms straight and pull bar down to thighs using lats. Squeeze lats at bottom, then return slowly feeling stretch at top."
+  },
+  {
+    "name": "Hyperextensions",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Position hips on pad with ankles secured. Cross arms over chest or hold plate. Lower torso until nearly vertical, then raise back to parallel or slightly above. Squeeze glutes and lower back at top."
+  },
+  {
+    "name": "Inverted Rows",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Set bar at hip height in rack. Lie underneath gripping bar with overhand grip. Keep body straight and pull chest to bar, squeezing shoulder blades. Lower with control, maintaining body rigidity."
+  },
+  {
+    "name": "Wide Grip Lat Pulldown",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use wide grip attachment or grip bar wider than shoulders. Sit with thighs secured and pull bar to upper chest, focusing on lat width. Drive elbows down and squeeze lats at contraction."
+  },
+  {
+    "name": "Close Grip Lat Pulldown",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use V-bar attachment or grip bar with hands 6-12 inches apart. Pull to upper chest, focusing on lower lat engagement. Keep torso upright and squeeze lats at bottom position."
+  },
+  {
+    "name": "Machine Row",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Adjust chest pad and foot platform. Grip handles and sit back against pad. Pull handles toward torso, driving elbows back and squeezing shoulder blades. Return slowly to starting position."
+  },
+  {
+    "name": "Cable Straight Arm Pulldown",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use straight bar or rope attachment set high. Step back, hinge slightly forward. Keep arms straight and pull attachment down to thighs using only lats. Feel stretch at top, squeeze at bottom."
+  },
+  {
+    "name": "Renegade Rows",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start in plank position holding dumbbells. Row one dumbbell to hip while balancing on other. Alternate sides, keeping hips level and core tight. Control rotation throughout movement."
+  },
+  {
+    "name": "Kroc Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use heavy dumbbell with straps if needed. Support body on bench with one arm and knee. Row with some body English for momentum, focusing on high reps. Squeeze lat hard at top of each rep."
+  },
+  {
+    "name": "Single Arm Dumbbell Row",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place one knee and hand on bench, other foot on floor. Hold dumbbell in free hand. Pull dumbbell to hip, keeping elbow close to body. Squeeze lat at top, lower with control. Complete reps, switch sides."
+  },
+  {
+    "name": "Underhand Cable Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use underhand grip on cable row attachment. Pull to lower abdomen, emphasizing biceps and lower lats. Keep torso upright and squeeze shoulder blades together at end of movement."
+  },
+  {
+    "name": "Wide Grip Pull-ups",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Use overhand grip wider than shoulder-width. Pull up until chin clears bar, focusing on lat width development. Lower with control. More challenging than standard pull-ups."
+  },
+  {
+    "name": "Neutral Grip Pull-ups",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Use parallel bars or neutral grip handles. Pull up until chin clears bar, easier on shoulders than overhand grip. Good for building pull-up strength and back width."
+  },
+  {
+    "name": "Towel Rows",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hang towels over pull-up bar and grip towels. Perform rows with body at angle. Excellent grip and back developer. Requires significant grip strength and stability."
+  },
+  {
+    "name": "Chest Supported Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie face down on incline bench holding dumbbells. Pull dumbbells to sides, squeezing shoulder blades. Bench support eliminates momentum, isolating back muscles completely."
+  },
+  {
+    "name": "Pendlay Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Explosive barbell rows from dead stop position. Start with bar on floor, pull explosively to lower chest, then return bar to floor. Focus on power and strict form."
+  },
+  {
+    "name": "Cable Wide Row",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use wide bar attachment at cable machine. Sit with chest against pad if available. Pull bar to upper chest, focusing on lat width. Return slowly with control."
+  },
+  {
+    "name": "Straight Arm Lat Pulldown",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use straight bar attachment set high. Keep arms straight and pull down to thighs using lats only. Squeeze lats hard at bottom, return slowly feeling stretch at top."
+  },
+  {
+    "name": "Reverse Grip Lat Pulldown",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use underhand grip on lat pulldown bar. Pull to upper chest, emphasizing lower lats and biceps. Keep torso upright and squeeze shoulder blades together."
+  },
+  {
+    "name": "Overhead Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand with bar at upper chest, grip slightly wider than shoulders. Brace core and press bar overhead until arms lock out. Lower with control to starting position, keeping bar close to face."
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit on bench with back support. Hold dumbbells at shoulder level, palms forward. Press both dumbbells up until arms extend, nearly touching at top. Lower with control to starting position."
+  },
+  {
+    "name": "Lateral Raises",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand holding dumbbells at sides with slight bend in elbows. Raise arms out to sides until parallel to floor, leading with pinky side. Lower slowly with control, resisting gravity."
+  },
+  {
+    "name": "Front Raises",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold dumbbells in front of thighs. Raise one or both arms forward and up to shoulder height. Lower with control. Keep slight bend in elbows throughout movement."
+  },
+  {
+    "name": "Rear Delt Flyes",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Bend at hips until torso is nearly parallel to floor. Hold dumbbells with palms facing each other. Raise arms out to sides, squeezing rear delts. Keep slight bend in elbows."
+  },
+  {
+    "name": "Arnold Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit holding dumbbells at shoulder height, palms facing you. Press up while rotating wrists so palms face forward at top. Reverse rotation on way down. Full range hits all three delt heads."
+  },
+  {
+    "name": "Upright Rows",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold barbell or dumbbells in front of thighs. Pull weight straight up toward chin, leading with elbows and flaring them out. Lower with control. Keep bar close to body throughout."
+  },
+  {
+    "name": "Shrugs",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold heavy dumbbells or barbell at sides. Shrug shoulders straight up toward ears, squeezing traps hard at top. Hold peak contraction briefly. Lower with control, feeling stretch at bottom."
+  },
+  {
+    "name": "Face Pulls (Shoulders)",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable at face height with rope attachment. Stand back in athletic stance. Pull rope to face level, rotating hands outward and squeezing rear delts. Return slowly with control."
+  },
+  {
+    "name": "Lateral Raise Machine",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Adjust seat so pads align with elbows. Sit upright with back against pad. Raise arms out to sides using machine's pivot point. Squeeze medial delts at top, lower with control."
+  },
+  {
+    "name": "Cable Lateral Raises",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable low, stand with working side closest to machine. Cross body and grip handle. Raise arm out to side until parallel to floor. Maintain constant tension throughout range of motion."
+  },
+  {
+    "name": "Cable Front Raises",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable low with rope or bar attachment. Stand facing away from machine. Raise arms forward and up to shoulder height, keeping slight bend in elbows. Control the weight on the return."
+  },
+  {
+    "name": "Cable Rear Delt Flyes",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cables at shoulder height, stand in center facing machine. Cross arms grabbing opposite handles. Pull handles out and back, squeezing rear delts. Keep slight bend in elbows throughout."
+  },
+  {
+    "name": "Push Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Start with bar at shoulders. Dip by bending knees slightly, then explosively extend legs and press bar overhead in one motion. Use leg drive to help press more weight overhead."
+  },
+  {
+    "name": "Clean and Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Start with bar on floor. Explosively pull bar to shoulders in clean motion. Dip slightly, then press overhead. Lower bar to floor between reps. Full-body power movement."
+  },
+  {
+    "name": "Single Arm Overhead Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand holding one dumbbell at shoulder. Brace core to prevent leaning. Press dumbbell overhead until arm locks out. Lower with control. Complete reps, then switch arms."
+  },
+  {
+    "name": "Dumbbell Front Raise",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand with dumbbells in front of thighs, palms facing body. Raise arms forward and up to shoulder height, keeping slight bend in elbows. Lower slowly with control."
+  },
+  {
+    "name": "Dumbbell Rear Delt Raise",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Bend at hips until torso is nearly parallel to floor. Hold dumbbells with palms facing each other. Raise arms out to sides, focusing on rear delt contraction. Lower with control."
+  },
+  {
+    "name": "Plate Raises",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold weight plate at sides or front. Raise plate forward or to sides to shoulder height. Excellent for grip endurance and front delt development. Keep controlled tempo."
+  },
+  {
+    "name": "Shoulder Dislocates",
+    "category": "Shoulders",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold band or broomstick with wide grip. Slowly rotate arms overhead and behind back, then return forward. Keep arms straight throughout. Great warm-up for shoulder mobility."
+  },
+  {
+    "name": "Lateral Raise (Leaning)",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand holding dumbbell in one hand. Lean away from weight, then raise arm out to side. Creates constant tension on medial deltoid. Switch sides after completing reps."
+  },
+  {
+    "name": "Front Plate Raise",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold weight plate with both hands at waist level. Raise plate straight out in front to shoulder height. Lower with control. Targets front deltoids and upper chest."
+  },
+  {
+    "name": "Reverse Pec Deck",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit at reverse pec deck machine facing away from handles. Pull handles back and out to sides, squeezing rear delts. Return slowly with control. Excellent for rear delt isolation."
+  },
+  {
+    "name": "Cable Upright Row",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use rope or bar attachment at low cable position. Pull straight up toward chin, leading with elbows. Keep bar close to body. Lower with control for constant tension."
+  },
+  {
+    "name": "Dumbbell Arnold Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit holding dumbbells at shoulder height, palms facing you. Press up while rotating wrists so palms face forward at top. Reverse rotation on way down. Hits all three deltoid heads."
+  },
+  {
+    "name": "Landmine Lateral Raise",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Anchor barbell in landmine. Hold end with one hand, stand sideways. Raise arm out to side until parallel to floor. Lower with control. Unique angle for medial delt development."
+  },
+  {
+    "name": "Cable Face Pull",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable at face height with rope. Pull rope toward face, flaring elbows out and rotating hands outward. Squeeze rear delts and upper traps. Return slowly with control."
+  },
+  {
+    "name": "Dumbbell Shrugs",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold heavy dumbbells at sides. Shrug shoulders straight up toward ears, squeezing traps. Hold contraction briefly. Lower with control. Can be done standing or seated."
+  },
+  {
+    "name": "Machine Shoulder Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Adjust seat height and grip handles. Press upward until arms lock out. Machine provides stability and constant resistance. Return slowly to starting position."
+  },
+  {
+    "name": "Z Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit on floor with legs extended straight out. Press weight overhead from this position. Challenges shoulder stability and core strength. Use dumbbells or barbell."
+  },
+  {
+    "name": "Plank",
+    "category": "Core",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Support body on forearms and toes, elbows under shoulders. Keep body in straight line from head to heels. Engage core, glutes, and quads. Hold position while breathing normally."
+  },
+  {
+    "name": "Russian Twists",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Sit with knees bent and feet elevated or on floor. Lean back slightly, holding weight or clasping hands. Rotate torso side to side, touching weight to floor beside hips. Keep core engaged."
+  },
+  {
+    "name": "Leg Raises",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with legs extended. Place hands under lower back for support. Lift legs together until perpendicular to floor, then lower with control without letting feet touch down."
+  },
+  {
+    "name": "Bicycle Crunches",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back, hands behind head. Bring opposite elbow to opposite knee while extending other leg. Rotate through torso, not just pulling with arms. Alternate sides in cycling motion."
+  },
+  {
+    "name": "Mountain Climbers",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start in plank position on hands. Drive one knee toward chest, then quickly switch legs. Keep hips level and core tight. Move at controlled pace, focusing on core engagement."
+  },
+  {
+    "name": "Hanging Leg Raises",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hang from pull-up bar with arms extended. Lift legs together until parallel to floor or higher, using lower abs. Control the descent without swinging. Minimize momentum."
+  },
+  {
+    "name": "Cable Woodchoppers",
+    "category": "Core",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable at top or bottom with rope or handle. Stand sideways to machine. Pull cable across body in diagonal chopping motion, rotating through torso. Keep arms straight, power from core."
+  },
+  {
+    "name": "Medicine Ball Slams",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold medicine ball overhead with arms extended. Explosively slam ball down in front of feet using entire body. Catch ball on bounce or pick up and repeat. Full-body power exercise."
+  },
+  {
+    "name": "Side Plank",
+    "category": "Core",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Lie on side, prop body up on forearm with elbow under shoulder. Stack feet and lift hips off floor. Hold body in straight line, engaging obliques. Hold, then switch sides."
+  },
+  {
+    "name": "Reverse Crunches",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with knees bent and feet off floor. Curl knees toward chest by lifting hips off floor, using lower abs. Lower with control without letting feet touch down."
+  },
+  {
+    "name": "Ab Wheel Rollouts",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Kneel holding ab wheel in front of knees. Roll forward extending body, keeping core tight. Go as far as possible without arching lower back. Pull back to starting position using abs."
+  },
+  {
+    "name": "Cable Crunches",
+    "category": "Core",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Kneel facing cable machine with rope attachment held at head. Crunch down, bringing elbows toward knees while rounding spine. Squeeze abs at bottom, then return to starting position."
+  },
+  {
+    "name": "Flutter Kicks",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with hands under glutes. Lift legs slightly off floor and alternate kicking up and down in small scissor motions. Keep lower back pressed to floor."
+  },
+  {
+    "name": "V-Ups",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie flat on back with arms extended overhead. Simultaneously lift legs and torso, reaching hands toward feet in V position. Lower with control without letting limbs touch floor."
+  },
+  {
+    "name": "Scissor Kicks",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with hands under glutes. Lift both legs slightly off floor. Cross one leg over the other in scissor motion, then alternate. Keep core engaged and lower back flat."
+  },
+  {
+    "name": "Medicine Ball Russian Twists",
+    "category": "Core",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit holding medicine ball with knees bent and feet elevated. Lean back slightly and rotate ball side to side, touching ball to floor beside hips. Keep core tight throughout."
+  },
+  {
+    "name": "Hanging Knee Raises",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hang from pull-up bar with arms extended. Bring knees up toward chest by curling pelvis up. Lower with control without swinging. Easier variation of hanging leg raises."
+  },
+  {
+    "name": "Dead Bug",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with arms extended toward ceiling and knees bent at 90 degrees. Lower opposite arm and leg simultaneously, keeping lower back pressed to floor. Return and alternate sides."
+  },
+  {
+    "name": "Bird Dog",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start on hands and knees. Extend opposite arm and leg simultaneously, keeping back flat. Hold briefly, then return to start. Focus on stability and preventing hip/shoulder rotation."
+  },
+  {
+    "name": "Medicine Ball Woodchoppers",
+    "category": "Core",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand holding medicine ball at shoulder height. Rotate and bring ball diagonally across body from high to low or low to high. Pivot feet and rotate through torso. Control the movement."
+  },
+  {
+    "name": "Hanging Windshield Wipers",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hang from pull-up bar with arms extended. Lift legs straight up, then rotate them side to side in windshield wiper motion. Keep body as still as possible, using only core to move legs."
+  },
+  {
+    "name": "Cable Pallof Press",
+    "category": "Core",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable at chest height, stand sideways to machine. Hold handle with both hands at chest. Press straight out, resisting rotation. Hold briefly, return. Switch sides. Excellent anti-rotation exercise."
+  },
+  {
+    "name": "Stir the Pot",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start in plank position on forearms with elbows on stability ball. Use forearms to roll ball in circles, keeping body stable. Engages entire core while challenging stability."
+  },
+  {
+    "name": "L-Sit",
+    "category": "Core",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Support body on parallel bars or floor with hands. Lift legs straight out in front, keeping body in L shape. Requires significant core and hip flexor strength. Progress from tuck position."
+  },
+  {
+    "name": "Hollow Body Hold",
+    "category": "Core",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Lie on back, lift shoulders and legs off floor. Arms extended overhead, legs straight. Hold position creating hollow body shape. Advanced core stability exercise."
+  },
+  {
+    "name": "Russian Twist (Weighted)",
+    "category": "Core",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with knees bent, hold weight or medicine ball. Lean back slightly and rotate torso side to side. Keep feet elevated for increased difficulty. Focus on controlled rotation."
+  },
+  {
+    "name": "Side Plank with Rotation",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start in side plank position. Rotate top arm under body and up toward ceiling. Return to side plank. Switch sides after completing reps. Challenges obliques and stability."
+  },
+  {
+    "name": "Cable Woodchopper (High to Low)",
+    "category": "Core",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable high with rope attachment. Stand sideways, pull cable diagonally across body from high to low. Pivot back foot and rotate through torso. Switch sides."
+  },
+  {
+    "name": "Cable Woodchopper (Low to High)",
+    "category": "Core",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable low with rope attachment. Stand sideways, pull cable diagonally across body from low to high. Pivot back foot and rotate through torso. Switch sides."
+  },
+  {
+    "name": "Medicine Ball V-Sit",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Sit holding medicine ball, lean back slightly. Extend legs and arms, then bring ball to meet feet in V position. Lower with control. Advanced core exercise requiring coordination."
+  },
+  {
+    "name": "Barbell Curl",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand holding barbell with underhand grip, hands shoulder-width. Curl bar toward shoulders, keeping elbows stationary at sides. Squeeze biceps at top, then lower with control."
+  },
+  {
+    "name": "Dumbbell Curl",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand or sit holding dumbbells at sides with palms facing forward. Curl both dumbbells toward shoulders, keeping elbows tucked. Rotate wrists outward as you curl. Lower slowly."
+  },
+  {
+    "name": "Tricep Dips",
+    "category": "Arms",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Use parallel bars or bench edge. Support body on hands with arms extended. Lower body by bending elbows until upper arms are parallel to floor. Push back up to starting position."
+  },
+  {
+    "name": "Tricep Pushdown",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand at cable machine with bar or rope attachment. Keep elbows tucked at sides and push bar down until arms fully extend. Squeeze triceps at bottom. Return with control."
+  },
+  {
+    "name": "Hammer Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold dumbbells with neutral grip (palms facing each other). Curl both dumbbells toward shoulders keeping palms facing inward throughout. Targets brachialis and forearms along with biceps."
+  },
+  {
+    "name": "Preacher Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit at preacher bench with upper arms resting on pad. Curl bar or dumbbell up, squeezing biceps at top. Lower with control feeling full stretch at bottom. Eliminates momentum."
+  },
+  {
+    "name": "Overhead Tricep Extension",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold dumbbell or cable handle overhead with both hands. Lower weight behind head by bending elbows. Keep upper arms close to ears. Extend arms fully, squeezing triceps at top."
+  },
+  {
+    "name": "Concentration Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit on bench, lean forward with elbow resting on inner thigh. Curl dumbbell toward shoulder, squeezing bicep at peak. Lower with control. Isolates each arm for maximum focus."
+  },
+  {
+    "name": "Close Grip Bench Press",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on bench with hands 6-8 inches apart on bar. Lower bar to lower chest, keeping elbows tucked close to body. Press up focusing on triceps rather than chest engagement."
+  },
+  {
+    "name": "Cable Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand facing cable machine with bar attachment at low position. Curl bar toward shoulders, keeping elbows at sides. Maintain constant tension throughout full range of motion."
+  },
+  {
+    "name": "Skull Crushers",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on bench holding EZ bar or dumbbells over chest. Lower weight toward forehead by bending elbows. Keep upper arms stationary. Extend arms fully, squeezing triceps hard."
+  },
+  {
+    "name": "Reverse Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold barbell or dumbbells with overhand grip. Curl weight up while keeping wrists straight. Targets brachialis and forearm extensors. Lower with control."
+  },
+  {
+    "name": "Cable Tricep Kickbacks",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable low with single handle. Bend at hips, upper arm parallel to floor. Extend arm fully behind body, squeezing triceps. Keep upper arm stationary throughout movement."
+  },
+  {
+    "name": "Zottman Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Curl dumbbells with palms up, then rotate to palms down at top. Lower with overhand grip. Combines benefits of regular and reverse curls in one movement."
+  },
+  {
+    "name": "Incline Dumbbell Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set bench to 45 degree incline. Lie back holding dumbbells at full extension. Curl dumbbells up, keeping elbows back. Full stretch at bottom creates greater range of motion."
+  },
+  {
+    "name": "Rope Tricep Pushdown",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use rope attachment at cable machine. Keep elbows tucked and push rope down. Separate rope ends at bottom, squeezing triceps hard. Return slowly with control."
+  },
+  {
+    "name": "Spider Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie face down on incline bench holding dumbbells hanging straight down. Curl weights up without swinging. Eliminates momentum completely, isolating biceps."
+  },
+  {
+    "name": "Diamond Push-ups",
+    "category": "Arms",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Form diamond shape with hands directly under chest. Lower body keeping elbows tucked close to sides. Push up focusing on triceps. More challenging than standard push-ups."
+  },
+  {
+    "name": "Wrist Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit holding barbell or dumbbells with forearms resting on thighs, palms up. Curl wrists upward, squeezing forearm flexors. Lower with control feeling stretch at bottom."
+  },
+  {
+    "name": "Reverse Wrist Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with forearms on thighs, palms facing down. Curl wrists upward, targeting forearm extensors. Lower slowly. Balances forearm development with wrist curls."
+  },
+  {
+    "name": "Cable Hammer Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use rope attachment at low cable position. Hold rope with neutral grip. Curl up keeping palms facing each other. Constant tension throughout range of motion."
+  },
+  {
+    "name": "Cable Overhead Tricep Extension",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use rope attachment at high cable position. Face away from machine, hold rope behind head. Extend arms fully, squeezing triceps. Return slowly with control."
+  },
+  {
+    "name": "Incline Hammer Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set bench to 45 degree incline. Lie back holding dumbbells with neutral grip. Curl dumbbells up, feeling stretch at bottom. Targets brachialis and forearms."
+  },
+  {
+    "name": "Tricep Extension (Dumbbell)",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on bench holding one dumbbell with both hands overhead. Lower weight behind head by bending elbows. Keep upper arms stationary. Extend arms fully, squeezing triceps."
+  },
+  {
+    "name": "Concentration Curls (Alternate)",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit on bench, lean forward with elbow resting on inner thigh. Curl dumbbell toward shoulder, rotating wrist outward at top. Lower with control. Isolates biceps completely."
+  },
+  {
+    "name": "Cable Preacher Curl",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use cable machine with preacher bench attachment. Curl cable attachment up, keeping upper arms on pad. Eliminates momentum, constant tension on biceps."
+  },
+  {
+    "name": "Tricep Pushdown (V-Bar)",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use V-bar attachment at cable machine. Keep elbows tucked and push down until arms fully extend. Squeeze triceps at bottom. Return with control, maintaining tension."
+  },
+  {
+    "name": "Reverse Grip Tricep Pushdown",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Use bar attachment at cable machine with underhand grip. Keep elbows tucked and push down, emphasizing long head of triceps. Return slowly with control."
+  },
+  {
+    "name": "Cable Concentration Curl",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable low with single handle. Sit on bench, elbow resting on inner thigh. Curl cable attachment up, isolating biceps. Lower with control for constant tension."
+  },
+  {
+    "name": "Finger Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold barbell or dumbbell with fingertips only. Curl fingers to strengthen grip and forearm flexors. Lower slowly. Important for grip strength and forearm development."
+  },
+  {
+    "name": "Barbell Squat",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place bar on upper back/traps. Stand with feet shoulder-width or slightly wider. Brace core, sit back and down until thighs are parallel to floor. Drive through heels to stand, squeezing glutes at top."
+  },
+  {
+    "name": "Leg Press",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit in leg press machine with feet shoulder-width on platform. Lower platform by bending knees until 90 degrees. Push through heels to extend legs, without locking knees at top."
+  },
+  {
+    "name": "Leg Curl",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie face down or sit at leg curl machine. Position pad just above ankles. Curl heels toward glutes by flexing knees. Squeeze hamstrings at peak contraction. Lower with control."
+  },
+  {
+    "name": "Leg Extension",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with back against pad, shins behind lower pad. Extend legs fully, squeezing quadriceps at top. Lower with control without letting weight stack touch. Great for quad isolation."
+  },
+  {
+    "name": "Lunges",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Step forward with one leg, lowering hips until both knees are 90 degrees. Back knee nearly touches floor. Push through front heel to return to standing. Alternate legs."
+  },
+  {
+    "name": "Sumo Deadlifts",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Take very wide stance with toes pointing significantly outward. Grip bar inside legs. Keep chest up and back flat as you push through feet to stand. Targets quads and adductors more than conventional."
+  },
+  {
+    "name": "Romanian Deadlifts",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold bar or dumbbells with slight knee bend. Hinge at hips pushing them back, lowering weight along legs. Stop when you feel hamstring stretch, usually mid-shin. Drive hips forward to stand."
+  },
+  {
+    "name": "Walking Lunges",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Step forward into lunge, lowering back knee toward floor. Push through front foot to bring back leg forward into next lunge. Continue walking forward, alternating legs with each step."
+  },
+  {
+    "name": "Bulgarian Split Squats",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place rear foot on bench behind you. Lower into squat on front leg until thigh is parallel to floor. Push through front heel to stand. Complete reps, then switch legs. Intense single-leg exercise."
+  },
+  {
+    "name": "Calf Raises",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand on edge of step with balls of feet, heels hanging off. Lower heels below step level feeling stretch. Push up onto toes, squeezing calves at top. Hold peak contraction briefly."
+  },
+  {
+    "name": "Hip Thrusts",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with upper back against bench, barbell across hips. Drive through heels thrusting hips upward until body is parallel to floor. Squeeze glutes hard at top. Lower with control."
+  },
+  {
+    "name": "Step-ups",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand facing box or bench. Step up with one foot driving through heel. Bring other foot up to meet. Step back down with same leg leading. Complete reps, then switch lead leg."
+  },
+  {
+    "name": "Goblet Squats",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold single dumbbell vertically at chest level. Squat down keeping chest up and elbows inside knees. Drive through heels to stand. Great for learning proper squat form."
+  },
+  {
+    "name": "Front Squats",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Rest bar on front deltoids with clean grip or arms crossed. Keep elbows high. Squat down keeping torso upright. Drive through heels to stand. More quad-dominant than back squat."
+  },
+  {
+    "name": "Hack Squats",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Position shoulders under pads, feet on platform. Lower by bending knees until thighs are parallel to platform. Push through heels to extend legs. Machine provides back support."
+  },
+  {
+    "name": "Good Mornings",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place bar on upper back. With slight knee bend, hinge at hips pushing them back until torso is nearly parallel to floor. Keep back flat. Drive hips forward to return upright."
+  },
+  {
+    "name": "Nordic Curls",
+    "category": "Legs",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Kneel with ankles secured under pad or by partner. Slowly lower body forward using hamstrings to control descent. Catch yourself with hands at bottom, then push back up. Advanced hamstring exercise."
+  },
+  {
+    "name": "Wall Sits",
+    "category": "Legs",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Lean against wall and slide down until knees are 90 degrees. Keep back flat against wall. Hold position without using hands. Feel burn in quadriceps. Great endurance exercise."
+  },
+  {
+    "name": "Box Squats",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set box at parallel height. Squat back until sitting on box, maintaining tight core. Pause briefly without relaxing. Drive through heels to stand. Teaches proper depth and hip drive."
+  },
+  {
+    "name": "Single Leg Press",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit in leg press machine with one foot centered on platform. Lower weight by bending knee to 90 degrees. Push through heel to extend leg. Complete reps, then switch legs."
+  },
+  {
+    "name": "Walking Lunges (Dumbbell)",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold dumbbells at sides. Step forward into lunge, lowering back knee toward floor. Push through front foot to bring back leg forward into next lunge. Continue walking forward."
+  },
+  {
+    "name": "Reverse Lunges",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Step backward into lunge, lowering back knee toward floor. Push through front foot to return to standing. Alternate legs. Easier on knees than forward lunges."
+  },
+  {
+    "name": "Curtsy Lunges",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Step one leg diagonally behind the other into a curtsy position. Lower until both knees are 90 degrees. Push through front heel to return. Targets glutes more than standard lunges."
+  },
+  {
+    "name": "Walking Lunges (Barbell)",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold barbell on upper back. Step forward into lunge, lowering back knee toward floor. Push through front foot to bring back leg forward into next lunge. Continue walking forward."
+  },
+  {
+    "name": "Deficit Deadlifts",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand on elevated surface (plates or platform) to increase range of motion. Perform deadlift from this deficit position. Increases hamstring and glute activation."
+  },
+  {
+    "name": "Single Leg Romanian Deadlift",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold dumbbells at sides. Hinge at hips lifting one leg behind you. Lower weight along standing leg until parallel to floor. Drive hips forward to stand. Complete reps, switch legs."
+  },
+  {
+    "name": "Bulgarian Split Squat (Dumbbell)",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place rear foot on bench behind you, hold dumbbells at sides. Lower into squat on front leg until thigh is parallel to floor. Push through front heel to stand. Complete reps, switch legs."
+  },
+  {
+    "name": "Calf Raise (Seated)",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with knees under pad, balls of feet on platform. Lower heels below platform level. Push up onto toes, squeezing calves. Targets soleus muscle more than standing version."
+  },
+  {
+    "name": "Calf Raise (Donkey)",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lean forward with hips on pad, shoulders under support. Place balls of feet on platform. Lower heels below platform, then push up onto toes. Can use weight plate on back for resistance."
+  },
+  {
+    "name": "Glute Bridge",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on back with knees bent, feet flat on floor. Drive through heels to lift hips toward ceiling. Squeeze glutes at top. Lower with control. Can add weight plate on hips for resistance."
+  },
+  {
+    "name": "Running",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Run at steady pace on treadmill, track, or outdoors. Maintain consistent breathing rhythm. Land midfoot and maintain upright posture. Vary intensity for different training effects."
+  },
+  {
+    "name": "Cycling",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Ride stationary bike or outdoors. Adjust resistance for desired intensity. Maintain cadence of 60-100 RPM depending on goals. Keep core engaged and back neutral."
+  },
+  {
+    "name": "Swimming",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Swim continuous laps using preferred stroke. Focus on breathing technique and efficient form. Mix strokes for variety. Low-impact full-body cardiovascular exercise."
+  },
+  {
+    "name": "Rowing",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Use rowing machine with proper form: push with legs, hinge at hips, pull with arms. Reverse on return. Maintain consistent stroke rate. Full-body low-impact cardio."
+  },
+  {
+    "name": "Elliptical",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Stand on elliptical pedals and grip handles. Move in smooth elliptical motion pushing and pulling with arms. Adjust resistance and incline for intensity. Low-impact alternative to running."
+  },
+  {
+    "name": "Stair Climber",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Use stair stepper machine or climb actual stairs. Step fully onto each stair before pushing up. Maintain upright posture. Great for legs and cardiovascular fitness."
+  },
+  {
+    "name": "Jump Rope",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Hold rope handles with elbows at sides. Jump with both feet, clearing rope as it passes under. Stay light on balls of feet. Vary speed and technique for intensity."
+  },
+  {
+    "name": "HIIT",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "High Intensity Interval Training. Alternate short bursts of maximum effort with brief recovery periods. Can use any exercise modality. Highly efficient for fitness and fat loss."
+  },
+  {
+    "name": "Sprints",
+    "category": "Cardio",
+    "type": "time_speed",
+    "unit": "seconds",
+    "description": "Run at maximum speed for short distance or time. Rest completely between sprints. Focus on explosive power and proper running mechanics. Develops speed and anaerobic capacity."
+  },
+  {
+    "name": "Jogging",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Run at easy conversational pace. Focus on relaxation and consistent rhythm. Can be done anywhere. Great for building aerobic base and recovery."
+  },
+  {
+    "name": "Brisk Walking",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Walk at faster than normal pace, pumping arms. Maintain posture and breathe deeply. Low-impact option suitable for all fitness levels. Accessible cardiovascular exercise."
+  },
+  {
+    "name": "Burpees",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Drop to floor into plank, perform push-up, jump feet in, explosively jump up reaching overhead. High-intensity full-body exercise. Modify by eliminating push-up or jump if needed."
+  },
+  {
+    "name": "Jumping Jacks",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Jump feet out while raising arms overhead, then return to start. Maintain rhythm and stay light on feet. Classic warm-up or cardio exercise suitable for all levels."
+  },
+  {
+    "name": "Mountain Climbers (Cardio)",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "From plank position, rapidly alternate driving knees to chest in running motion. Keep hips level and core tight. Move as fast as possible while maintaining form. High-intensity cardio."
+  },
+  {
+    "name": "Battle Ropes",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Hold rope ends with arms extended. Create waves by rapidly moving arms up and down. Vary patterns: alternating, double waves, or circles. Intense upper body and cardio workout."
+  },
+  {
+    "name": "Kettlebell Swings",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Stand with feet wide, kettlebell between legs. Hinge at hips and swing kettlebell up to chest height using hip snap. Let bell fall back between legs and repeat. Explosive hip power."
+  },
+  {
+    "name": "Box Jumps",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Stand facing plyo box. Drop into quarter squat, then explosively jump onto box landing softly with both feet. Stand fully, then step back down. Develops explosive power."
+  },
+  {
+    "name": "Shadow Boxing",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Assume boxing stance and throw punches at air: jabs, crosses, hooks, uppercuts. Move feet and incorporate defensive movements. Great cardio and coordination without equipment."
+  },
+  {
+    "name": "Circuit Training",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Rotate through multiple exercises with minimal rest between. Combine strength and cardio movements. Complete entire circuit, rest briefly, then repeat. Efficient total body workout."
+  },
+  {
+    "name": "CrossFit WOD",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Workout of the Day following CrossFit methodology. Typically combines varied functional movements performed at high intensity. Follow specific workout programming or class structure."
+  },
+  {
+    "name": "Rowing Machine Intervals",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Use rowing machine for interval training. Alternate between high intensity bursts and recovery periods. Monitor stroke rate and power output. Full-body cardiovascular workout."
+  },
+  {
+    "name": "Cycling Intervals",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Perform interval training on stationary bike or outdoors. Alternate between high resistance/low cadence and low resistance/high cadence intervals. Monitor heart rate and power output."
+  },
+  {
+    "name": "Treadmill Intervals",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Alternate between sprinting and walking on treadmill. Set specific speed and incline for each interval. Monitor heart rate and pace. Highly effective for cardiovascular conditioning."
+  },
+  {
+    "name": "Stairmaster",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Use stairmaster machine for continuous stepping motion. Adjust resistance and speed for intensity. Maintain upright posture and engage core. Excellent for leg strength and cardio."
+  },
+  {
+    "name": "Jump Squats",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Perform squat, then explode upward into jump. Land softly and immediately go into next rep. High-impact plyometric exercise. Modify by eliminating jump if needed."
+  },
+  {
+    "name": "High Knees",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Run in place bringing knees up to hip height. Pump arms and maintain fast pace. Keep core tight and land softly. Excellent for cardiovascular conditioning and coordination."
+  },
+  {
+    "name": "Butt Kickers",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Run in place kicking heels toward glutes. Keep pace fast and maintain good form. Great warm-up exercise and cardiovascular workout."
+  },
+  {
+    "name": "Skaters",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Jump side to side in skating motion, landing on one foot and swinging other leg behind. Pump arms for momentum. Excellent for cardio and lateral movement training."
+  },
+  {
+    "name": "Bear Crawls",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Move on hands and feet in crawling motion. Keep hips level and core tight. Can move forward, backward, or side to side. Full-body conditioning exercise."
+  },
+  {
+    "name": "Agility Ladder Drills",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Perform various footwork patterns through agility ladder. Focus on speed, coordination, and quickness. Excellent for cardiovascular fitness and athletic performance."
+  },
+  {
+    "name": "Hamstring Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Sit with one leg extended, other bent. Hinge forward at hips reaching for toes of extended leg. Feel stretch in back of thigh. Keep back straight. Hold, then switch legs."
+  },
+  {
+    "name": "Quad Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Stand holding balance support. Bend one knee grabbing ankle pulling heel toward glute. Keep knees together and hips neutral. Feel stretch in front of thigh. Hold, switch legs."
+  },
+  {
+    "name": "Hip Flexor Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Kneel in lunge position with back knee on floor. Shift hips forward keeping torso upright. Feel stretch in front of hip on back leg. Squeeze glute for deeper stretch. Switch sides."
+  },
+  {
+    "name": "Chest Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Stand in doorway with arms bent at 90 degrees on frame. Step forward until stretch felt across chest. Can also clasp hands behind back and lift. Hold stretch position."
+  },
+  {
+    "name": "Shoulder Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Bring one arm across chest. Use other arm to pull it closer to body. Feel stretch in back of shoulder. Keep shoulders down. Hold, then repeat on other side."
+  },
+  {
+    "name": "Tricep Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Raise one arm overhead bending elbow so hand reaches down back. Use other hand to gently pull elbow back. Feel stretch along back of upper arm. Hold, switch arms."
+  },
+  {
+    "name": "Cat-Cow Stretch",
+    "category": "Stretching",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start on hands and knees. Arch back up like angry cat tucking chin and tailbone. Then drop belly down lifting head and tailbone. Flow smoothly between positions warming up spine."
+  },
+  {
+    "name": "Child's Pose",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Kneel and sit back on heels. Extend arms forward lowering chest toward floor. Rest forehead on ground. Feel stretch in back, shoulders, and hips. Relax and breathe deeply."
+  },
+  {
+    "name": "Downward Dog",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "From plank, push hips up and back forming inverted V shape. Press heels toward floor, push chest toward thighs. Feel stretch in hamstrings, calves, shoulders. Common yoga pose."
+  },
+  {
+    "name": "Cobra Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Lie face down, hands under shoulders. Press upper body up extending arms while keeping hips on floor. Feel stretch in abdomen and lower back. Look forward or slightly up."
+  },
+  {
+    "name": "Seated Forward Bend",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Sit with both legs extended straight. Hinge at hips reaching forward for toes. Keep back as straight as possible. Feel stretch in hamstrings and lower back. Relax into stretch."
+  },
+  {
+    "name": "Butterfly Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Sit bringing soles of feet together with knees out to sides. Hold feet and gently press knees toward floor using elbows. Feel stretch in inner thighs and groin. Keep back straight."
+  },
+  {
+    "name": "Figure Four Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Lie on back, cross one ankle over opposite knee creating figure four. Pull uncrossed leg toward chest. Feel deep stretch in glute and hip of crossed leg. Switch sides."
+  },
+  {
+    "name": "Standing Side Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Stand with feet together. Raise one arm overhead and lean to opposite side. Feel stretch along side of body from hip to armpit. Keep chest open. Hold, then switch sides."
+  },
+  {
+    "name": "Neck Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Gently tilt head to one side bringing ear toward shoulder. Use hand for gentle additional pressure if needed. Feel stretch along side of neck. Hold, then repeat on other side."
+  },
+  {
+    "name": "Wrist Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Extend one arm with palm up. Use other hand to gently pull fingers back toward forearm. Then flip hand palm down and pull fingers toward you. Stretches wrist flexors and extensors."
+  },
+  {
+    "name": "Ankle Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Sit or stand, extend one leg. Flex foot pulling toes toward shin. Then point foot extending toes away. Circle ankle in both directions. Improves ankle mobility and prevents injury."
+  },
+  {
+    "name": "Thoracic Rotation",
+    "category": "Stretching",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start on hands and knees. Place one hand behind head. Rotate upper body opening elbow toward ceiling. Follow elbow with eyes. Return and repeat. Then switch sides. Mobilizes mid-back."
+  },
+  {
+    "name": "Pectoral Doorway Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Stand in doorway with forearms on door frame at 90 degrees, elbows at shoulder height. Step forward until stretch felt across chest and front of shoulders. Hold position breathing deeply."
+  },
+  {
+    "name": "Dynamic Stretching",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Perform controlled movements through full range of motion: leg swings, arm circles, walking lunges, high knees. Prepares body for activity by increasing blood flow and mobility. Do before workout."
+  },
+  {
+    "name": "Standing Quad Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Stand holding balance support. Bend one knee grabbing ankle pulling heel toward glute. Keep knees together and hips neutral. Feel stretch in front of thigh. Hold, switch legs."
+  },
+  {
+    "name": "Seated Spinal Twist",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Sit with legs extended. Bend one knee crossing foot over opposite leg. Twist torso toward bent knee using opposite arm for leverage. Feel stretch in spine and glutes. Hold, switch sides."
+  },
+  {
+    "name": "Standing Forward Fold",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Stand with feet hip-width. Hinge at hips folding forward, letting arms hang. Bend knees slightly if needed. Feel stretch in hamstrings and lower back. Relax and breathe deeply."
+  },
+  {
+    "name": "Hip Opener Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Sit with soles of feet together, knees out to sides. Hold feet and gently press knees toward floor. Can also lie on back with feet on wall in butterfly position. Opens hip flexors and groin."
+  },
+  {
+    "name": "Chest Opener Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Stand with arms extended behind back, interlace fingers. Lift arms slightly while squeezing shoulder blades together. Feel stretch across chest and front of shoulders. Hold position."
+  },
+  {
+    "name": "Upper Back Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Sit or stand, clasp hands in front of body. Round upper back while pushing hands forward. Drop chin to chest. Feel stretch across upper back and shoulders. Hold position breathing deeply."
+  },
+  {
+    "name": "Hip Flexor Lunge Stretch",
+    "category": "Stretching",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Kneel in lunge position with back knee on floor. Shift hips forward keeping torso upright. Can also raise arm on front leg side for deeper stretch. Feel stretch in front of hip. Switch sides."
+  },
+  {
+    "name": "Dynamic Leg Swings",
+    "category": "Stretching",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold support and swing one leg forward and back, then side to side. Keep movement controlled and increase range gradually. Warms up hip joints and leg muscles. Do both legs."
+  },
+  {
+    "name": "Arm Circles",
+    "category": "Stretching",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand with arms extended to sides. Make small circles gradually increasing size. Do forward circles, then reverse. Warms up shoulder joints and improves mobility. Keep movements controlled."
+  },
+  {
+    "name": "World's Greatest Stretch",
+    "category": "Stretching",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start in plank, step right foot outside right hand. Rotate torso opening right arm toward ceiling. Return hand to floor and step back to plank. Repeat on other side. Full-body dynamic stretch."
+  },
+  {
+    "name": "Deadlifts",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand with feet hip-width, bar over mid-foot. Hinge at hips and grip bar just outside legs. Keep back flat, chest up. Push floor away, extending hips forward to lockout. Hinge at hips to lower bar with control."
+  },
+  {
+    "name": "Squats",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place bar on upper back/traps. Stand with feet shoulder-width or slightly wider. Brace core, sit back and down until thighs are parallel to floor. Drive through heels to stand, squeezing glutes at top."
+  },
+  {
+    "name": "Bench Press",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie flat on bench with feet planted firmly on the floor. Grip the bar slightly wider than shoulder-width, retract your shoulder blades, and press the bar up until arms are fully extended. Lower with control to mid-chest."
+  },
+  {
+    "name": "Overhead Press",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand with bar at upper chest, grip slightly wider than shoulders. Brace core and press bar overhead until arms lock out. Lower with control to starting position, keeping bar close to face."
+  },
+  {
+    "name": "Power Cleans",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Explosive Olympic lift. Start with bar on floor, pull explosively to shoulders in one motion. Drop into squat receiving position, then stand up. Develops power and coordination."
+  },
+  {
+    "name": "Snatch",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Olympic lift from floor to overhead in one motion. Requires significant technique, mobility, and power. Pull bar explosively, drop under into overhead squat position."
+  },
+  {
+    "name": "Clean and Jerk",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Two-part Olympic lift. Clean bar to shoulders, then press or drive overhead. Can be done as push press, split jerk, or power jerk. Develops full-body power and coordination."
+  },
+  {
+    "name": "Kettlebell Clean and Press",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Clean kettlebell to shoulder, then press overhead. Can be done alternating or double kettlebells. Develops grip strength, shoulder stability, and full-body power."
+  },
+  {
+    "name": "Turkish Get-up",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on back holding weight overhead with one arm. Progressively stand up through multiple positions while keeping weight locked out. Then reverse back to floor. Ultimate full-body stability exercise."
+  },
+  {
+    "name": "Medicine Ball Slams",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold medicine ball overhead with arms extended. Explosively slam ball down in front of feet using entire body. Catch ball on bounce or pick up and repeat. Full-body power exercise."
+  },
+  {
+    "name": "Battle Ropes",
+    "category": "Full Body",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Hold rope ends with arms extended. Create waves by rapidly moving arms up and down. Vary patterns: alternating, double waves, or circles. Intense upper body and cardio workout."
+  },
+  {
+    "name": "Farmer's Walk",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold heavy weights at sides and walk for distance or time. Keep chest up, shoulders back, and core tight. Excellent for grip strength, core stability, and overall conditioning."
+  },
+  {
+    "name": "Sandbag Clean and Press",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Clean sandbag to shoulders, then press overhead. Can be done from floor or rack position. Unstable load challenges core and grip strength throughout movement."
+  },
+  {
+    "name": "Plyometric Push-ups",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Perform push-up explosively, pushing hands off floor at top. Land softly and immediately go into next rep. Builds explosive power and fast-twitch muscle fibers."
+  },
+  {
+    "name": "Burpees",
+    "category": "Full Body",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Drop to floor into plank, perform push-up, jump feet in, explosively jump up reaching overhead. High-intensity full-body exercise. Modify by eliminating push-up or jump if needed."
+  },
+  {
+    "name": "Box Jumps",
+    "category": "Full Body",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Stand facing plyo box. Drop into quarter squat, then explosively jump onto box landing softly with both feet. Stand fully, then step back down. Develops explosive power."
+  },
+  {
+    "name": "Kettlebell Swings",
+    "category": "Full Body",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Stand with feet wide, kettlebell between legs. Hinge at hips and swing kettlebell up to chest height using hip snap. Let bell fall back between legs and repeat. Explosive hip power."
+  },
+  {
+    "name": "Medicine Ball Rotational Throws",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand sideways to wall holding medicine ball at chest. Rotate and throw ball against wall. Catch and repeat. Develops rotational power and core strength."
+  },
+  {
+    "name": "Sled Pushes",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Load sled with weight and push for distance or time. Keep back flat and drive through legs. Excellent for leg strength, conditioning, and work capacity."
+  },
+  {
+    "name": "Sled Pulls",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Attach harness to sled and pull for distance or time. Maintain proper running form. Builds leg drive, hip extension, and cardiovascular fitness."
+  },
+  {
+    "name": "Rope Climbing",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Climb rope using arms and legs. Can be done with various techniques: leg wrap, figure four, or pure arm strength. Excellent grip and upper body developer."
+  },
+  {
+    "name": "Tire Flips",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Grip tire and use legs to drive it forward, then flip it over. Requires full-body power and technique. Can be done for reps or time. Excellent functional strength builder."
+  },
+  {
+    "name": "Sledgehammer Strikes",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand with feet wide, hold sledgehammer with both hands. Rotate and strike tire or heavy bag. Alternate sides. Develops rotational power, grip strength, and conditioning."
+  },
+  {
+    "name": "Battle Rope Waves",
+    "category": "Full Body",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "Hold rope ends and create continuous waves by moving arms up and down alternately. Keep core tight and maintain steady rhythm. Intense full-body conditioning exercise."
+  },
+  {
+    "name": "Medicine Ball Chest Pass",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold medicine ball at chest level, elbows bent. Explosively push ball forward from chest, either to partner or against wall. Catch rebound and immediately repeat. Focus on explosive power."
+  },
+  {
+    "name": "Plyometric Lunges",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Perform lunge, then explosively jump switching legs in mid-air. Land softly in lunge position with opposite leg forward. Requires coordination and explosive power."
+  },
+  {
+    "name": "Broad Jumps",
+    "category": "Full Body",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand with feet hip-width. Drop into quarter squat and explode forward jumping as far as possible. Land softly and immediately reset for next jump. Develops explosive leg power."
+  },
+  {
+    "name": "Medicine Ball Slam and Sprint",
+    "category": "Full Body",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Perform medicine ball slam, then immediately sprint for distance. Return and repeat. Combines power development with cardiovascular conditioning."
+  },
+  {
+    "name": "Farmer's Walk to Overhead Press",
+    "category": "Full Body",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Walk with heavy weights, then set them down and perform overhead press. Combines grip endurance with shoulder strength. Can be done for distance or time intervals."
+  },
+  {
+    "name": "TRX Rows",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Adjust TRX straps and lean back with feet on floor. Pull body up using straps, squeezing shoulder blades together. Lower with control. Can adjust difficulty by changing foot position."
+  },
+  {
+    "name": "TRX Chest Press",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Face away from TRX straps, lean forward with feet on floor. Push body away from anchor point, extending arms fully. Lower with control. Can adjust difficulty by changing foot position."
+  },
+  {
+    "name": "TRX Squats",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles and perform squats using straps for balance and assistance. Can also do single-leg variations. Improves squat depth and stability."
+  },
+  {
+    "name": "TRX Atomic Push-ups",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place feet in TRX straps. Perform push-up, then pull knees to chest in pike position. Return to plank and repeat. Combines upper body strength with core stability."
+  },
+  {
+    "name": "TRX Hamstring Curls",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with heels in TRX straps. Lift hips and pull heels toward glutes using hamstrings. Lower with control. Excellent for hamstring strength and core stability."
+  },
+  {
+    "name": "TRX Y-Squats",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles overhead and perform squats. Maintains shoulder stability while working lower body. Can also do T and W variations for different angles."
+  },
+  {
+    "name": "TRX Single Leg Squat",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles for balance, perform squat on one leg with other leg extended. Can use straps for assistance. Excellent for single-leg strength and stability."
+  },
+  {
+    "name": "TRX Pike",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place feet in TRX straps, assume plank position. Lift hips into pike position, forming inverted V. Hold or perform small pulses. Advanced core stability exercise."
+  },
+  {
+    "name": "TRX Fallouts",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place forearms in TRX straps, assume plank position. Slowly lean forward extending body, keeping core tight. Return to start. Advanced core stability exercise."
+  },
+  {
+    "name": "TRX Chest Fly",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Face away from TRX, hold handles at chest level. Step forward to create tension, then bring hands together in chest fly motion. Return with control. Targets chest and shoulders."
+  },
+  {
+    "name": "TRX Atomic Squats",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles and perform squat, then stand and press handles overhead. Combines lower body strength with shoulder stability. Can adjust difficulty with foot position."
+  },
+  {
+    "name": "TRX Single Arm Row",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Adjust TRX straps, lean back with one hand in strap. Perform row with single arm, keeping body stable. Switch sides. Excellent for unilateral back development."
+  },
+  {
+    "name": "TRX Hamstring Curl to Pike",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with heels in TRX straps. Pull heels toward glutes, then lift hips into pike position. Return to start. Advanced core and hamstring exercise."
+  },
+  {
+    "name": "TRX Lunge Matrix",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles and perform forward, reverse, and lateral lunges. Uses straps for balance and increased range of motion. Comprehensive lower body stability exercise."
+  },
+  {
+    "name": "TRX Face Pull",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Adjust TRX straps to chest height. Face straps and pull handles toward face, flaring elbows out. Squeeze rear delts and upper back. Return with control."
+  },
+  {
+    "name": "TRX Single Leg Deadlift",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles for balance, perform deadlift on one leg with other leg extended behind. Excellent for hip stability and hamstring development."
+  },
+  {
+    "name": "TRX Mountain Climbers",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place feet in TRX straps, assume plank position. Drive knees toward chest in running motion. Increased instability challenges core more than standard mountain climbers."
+  },
+  {
+    "name": "TRX Atomic Push-up to Row",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place feet in TRX straps. Perform push-up, then pull knees to chest. Return to plank, then perform row with feet still in straps. Advanced full-body exercise."
+  },
+  {
+    "name": "TRX Side Plank",
+    "category": "Functional Training",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Place one foot in TRX strap, assume side plank position. Use strap for instability challenge. Hold position, then switch sides. Advanced oblique stability exercise."
+  },
+  {
+    "name": "TRX Burpee",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place feet in TRX straps. Perform push-up, then pull feet to hands in pike position. Jump feet back and stand up. Advanced variation of standard burpee."
+  },
+  {
+    "name": "TRX Single Leg Squat to Press",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles, perform single leg squat, then stand and press handles overhead. Combines unilateral leg strength with shoulder stability."
+  },
+  {
+    "name": "TRX Hamstring Curl to Squat",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with heels in TRX straps. Pull heels toward glutes, then stand up in squat position. Return to floor and repeat. Advanced full-body exercise."
+  },
+  {
+    "name": "TRX Atomic Lunge",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles and perform lunge, then stand and press handles overhead. Combines unilateral leg strength with shoulder stability. Can do walking or stationary version."
+  },
+  {
+    "name": "TRX Single Arm Chest Press",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Face away from TRX, hold one handle. Lean forward and press handle away from body. Switch sides. Excellent for unilateral chest development and core stability."
+  },
+  {
+    "name": "TRX Pike to Push-up",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place feet in TRX straps, assume plank position. Lift hips into pike, then lower to push-up position. Perform push-up, then return to pike. Advanced core and upper body exercise."
+  },
+  {
+    "name": "TRX Single Leg Deadlift to Row",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles, perform single leg deadlift, then pull handles toward body in rowing motion. Combines hip stability with back strength. Switch sides."
+  },
+  {
+    "name": "TRX Atomic Squat to Row",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold TRX handles and perform squat, then stand and perform row. Combines lower body strength with back development. Can adjust difficulty with foot position."
+  },
+  {
+    "name": "TRX Single Arm Overhead Press",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold one TRX handle, lean back slightly. Press handle overhead while maintaining stability. Switch sides. Excellent for unilateral shoulder strength and core stability."
+  },
+  {
+    "name": "TRX Burpee to Push-up",
+    "category": "Functional Training",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Place feet in TRX straps. Perform push-up, pull feet to hands, jump feet back and perform push-up. Return to standing. Advanced full-body conditioning exercise."
+  },
+  {
+    "name": "Hip Circles",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand on one leg, lift other knee and make circles with hip joint. Start small and gradually increase size. Improves hip mobility and warms up hip joint. Switch legs."
+  },
+  {
+    "name": "Ankle Circles",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Sit or stand, lift one foot off ground. Rotate ankle in circles, both directions. Improves ankle mobility and prevents injury. Switch feet."
+  },
+  {
+    "name": "Wrist Circles",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Extend arms and rotate wrists in circles, both directions. Can also do wrist flexion/extension stretches. Improves wrist mobility for pushing exercises."
+  },
+  {
+    "name": "Shoulder Dislocates",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold band or broomstick with wide grip. Slowly rotate arms overhead and behind back, then return forward. Keep arms straight throughout. Great warm-up for shoulder mobility."
+  },
+  {
+    "name": "World's Greatest Stretch",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start in plank, step right foot outside right hand. Rotate torso opening right arm toward ceiling. Return hand to floor and step back to plank. Repeat on other side. Full-body dynamic stretch."
+  },
+  {
+    "name": "Cat-Cow Stretch",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start on hands and knees. Arch back up like angry cat tucking chin and tailbone. Then drop belly down lifting head and tailbone. Flow smoothly between positions warming up spine."
+  },
+  {
+    "name": "Thoracic Rotation",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start on hands and knees. Place one hand behind head. Rotate upper body opening elbow toward ceiling. Follow elbow with eyes. Return and repeat. Then switch sides. Mobilizes mid-back."
+  },
+  {
+    "name": "90/90 Hip Rotation",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Sit with one leg bent at 90 degrees in front, other bent at 90 degrees behind. Keep both knees on floor if possible. Rotate torso toward front leg. Switch sides. Improves hip rotation."
+  },
+  {
+    "name": "Frog Stretch",
+    "category": "Mobility",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Start on hands and knees, widen knees and point toes out. Sit back toward heels while keeping chest up. Feel stretch in inner thighs and hips. Hold position breathing deeply."
+  },
+  {
+    "name": "World's Greatest Hip Stretch",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "From plank position, step one foot outside hand into deep lunge. Rotate torso opening opposite arm toward ceiling. Return to plank and repeat on other side. Dynamic hip mobility exercise."
+  },
+  {
+    "name": "Dynamic Leg Swings",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold support and swing one leg forward and back, then side to side. Keep movement controlled and increase range gradually. Warms up hip joints and leg muscles. Do both legs."
+  },
+  {
+    "name": "Arm Circles",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand with arms extended to sides. Make small circles gradually increasing size. Do forward circles, then reverse. Warms up shoulder joints and improves mobility. Keep movements controlled."
+  },
+  {
+    "name": "Hip Flexor Dynamic Stretch",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Kneel in lunge position. Drive hips forward while raising arms overhead. Return to start and repeat. Can also add rotation. Dynamic stretch for hip flexors and thoracic spine."
+  },
+  {
+    "name": "Ankle Dorsiflexion Stretch",
+    "category": "Mobility",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Kneel with one foot forward, knee bent. Keep heel on floor and lean forward to stretch ankle. Can use band for assistance. Improves ankle mobility for squats and lunges."
+  },
+  {
+    "name": "Shoulder Wall Slides",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand with back against wall, arms in goal post position. Slide arms up and down wall while maintaining contact. Improves shoulder mobility and scapular control."
+  },
+  {
+    "name": "Hip CARs (Controlled Articular Rotations)",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand on one leg, lift other knee and make controlled circles with hip joint. Move slowly through full range of motion. Improves hip control and mobility. Switch legs."
+  },
+  {
+    "name": "Spinal Extension on Foam Roller",
+    "category": "Mobility",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Lie on foam roller placed horizontally across upper back. Support head with hands and extend spine over roller. Roll up and down slightly to mobilize thoracic spine."
+  },
+  {
+    "name": "Hip CARs (Quadruped)",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "On hands and knees, lift one knee slightly off floor. Make controlled circles with hip joint, moving through full range of motion. Improves hip control and mobility. Switch sides."
+  },
+  {
+    "name": "Ankle CARs",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Sit or stand, lift one foot off ground. Make controlled circles with ankle joint, moving through full range of motion. Improves ankle control and mobility. Switch feet."
+  },
+  {
+    "name": "Shoulder CARs",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand with arms extended to sides. Make controlled circles with shoulder joints, moving through full range of motion. Can do forward and reverse circles. Improves shoulder control."
+  },
+  {
+    "name": "World's Greatest Stretch with Rotation",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "From plank, step one foot outside hand into deep lunge. Rotate torso opening opposite arm toward ceiling, then reach under body. Return to plank and repeat on other side."
+  },
+  {
+    "name": "Dynamic Hip Opener",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand with feet wide. Shift weight side to side, allowing knees to track over toes. Can also add small circles. Dynamic stretch for hip joints and groin."
+  },
+  {
+    "name": "Scapular Wall Slides",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand with back against wall, arms in goal post position. Slide arms up and down while squeezing shoulder blades together. Improves scapular control and thoracic mobility."
+  },
+  {
+    "name": "Hip Flexor CARs",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Kneel in lunge position. Make controlled circles with hip joint of back leg. Move slowly through full range of motion. Improves hip control and mobility."
+  },
+  {
+    "name": "Ankle Mobility Drill",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Kneel with one foot forward, knee bent. Keep heel on floor and rock forward and back. Can use band for assistance. Improves ankle dorsiflexion for squats and lunges."
+  },
+  {
+    "name": "Shoulder Dislocate with Band",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hold resistance band with wide grip. Slowly rotate arms overhead and behind back, then return forward. Band provides assistance and feedback. Great for shoulder mobility."
+  },
+  {
+    "name": "Hip CARs (Standing)",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Stand on one leg, lift other knee and make controlled circles with hip joint. Move slowly through full range of motion. Improves hip control and mobility. Switch legs."
+  },
+  {
+    "name": "World's Greatest Stretch with Reach",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "From plank, step one foot outside hand into deep lunge. Rotate torso opening opposite arm toward ceiling, then reach under body with same arm. Return to plank and repeat."
+  },
+  {
+    "name": "Dynamic Thoracic Extension",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "On hands and knees, place one hand behind head. Rotate elbow toward ceiling, then lower. Can also do full rotation. Dynamic stretch for thoracic spine mobility."
+  },
+  {
+    "name": "Ankle CARs (Weighted)",
+    "category": "Mobility",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Sit or stand, lift one foot off ground. Hold light weight and make controlled circles with ankle joint. Adds resistance to improve ankle strength and mobility. Switch feet."
+  }
+]

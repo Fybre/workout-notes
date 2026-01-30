@@ -9,6 +9,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   GestureHandlerRootView,
   Swipeable,
@@ -48,20 +49,11 @@ export default function HomeScreen() {
   // Load exercises for selected date when screen comes into focus and db is ready
   useFocusEffect(
     useCallback(() => {
-      console.log(
-        `[DEBUG] useFocusEffect triggered - dbReady: ${dbReady}, date: ${date}`,
-      );
-
-      if (!dbReady) {
-        console.log("[DEBUG] Database not ready, skipping load");
-        return;
-      }
+      if (!dbReady) return;
 
       // Add debounce to prevent rapid firing when changing dates quickly
       const loadExercisesWithDebounceTimer = setTimeout(async () => {
-        console.log(`[DEBUG] Starting to load exercises for date: ${date}`);
         try {
-          const startTime = Date.now();
           const data = await getExercisesForDate(date);
 
           // Add Personal Best detection
@@ -106,21 +98,12 @@ export default function HomeScreen() {
             }),
           );
 
-          const endTime = Date.now();
-          console.log(
-            `[DEBUG] Successfully loaded ${data.length} exercises in ${endTime - startTime}ms`,
-          );
-
           setExercises(exercisesWithPB as Exercise[]);
         } catch (error) {
-          console.error("[DEBUG] Failed to load exercises:", error);
-          console.error(
-            "[DEBUG] Error details:",
-            JSON.stringify(error, null, 2),
-          );
+          console.error("Failed to load exercises:", error);
           setExercises([]);
         }
-      }, 10); // 10ms debounce for monitoring
+      }, 10); // 10ms debounce
 
       return () => clearTimeout(loadExercisesWithDebounceTimer);
     }, [dbReady, date]),
@@ -178,7 +161,6 @@ export default function HomeScreen() {
 
   // Handle tap on date header to reset to today
   const handleDateHeaderTap = () => {
-    console.log("[DEBUG] Date header tapped, resetting to today");
     goToToday();
   };
 
@@ -361,6 +343,9 @@ export default function HomeScreen() {
                           </RNText>
                           {set.isPersonalBest && (
                             <Text style={styles.pbIcon}>🏆</Text>
+                          )}
+                          {set.note && (
+                            <FontAwesome name="sticky-note" size={12} color={colors.tint} style={styles.noteIcon} />
                           )}
                         </RNView>
                       ))}
@@ -697,5 +682,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     fontWeight: "600",
+  },
+  noteIcon: {
+    marginLeft: 4,
   },
 });

@@ -79,7 +79,7 @@ export function useCalendarData() {
         if (periodSaved) setChartPeriodState(JSON.parse(periodSaved));
         if (exercisesSaved) setSelectedExercises(JSON.parse(exercisesSaved));
       } catch (error) {
-        console.error("Failed to load preferences:", error);
+
       }
     };
     loadPreferences();
@@ -91,7 +91,7 @@ export function useCalendarData() {
     try {
       await AsyncStorage.setItem(CALENDAR_VIEW_KEY, JSON.stringify(mode));
     } catch (error) {
-      console.error("Failed to save view mode:", error);
+
     }
   }, []);
 
@@ -102,7 +102,7 @@ export function useCalendarData() {
     try {
       await AsyncStorage.setItem(SHOW_EMPTY_DAYS_KEY, JSON.stringify(newValue));
     } catch (error) {
-      console.error("Failed to save empty days preference:", error);
+
     }
   }, [showEmptyDays]);
 
@@ -119,7 +119,7 @@ export function useCalendarData() {
     try {
       await AsyncStorage.setItem(CHART_PERIOD_KEY, JSON.stringify(period));
     } catch (error) {
-      console.error("Failed to save chart period:", error);
+
     }
   }, []);
 
@@ -133,7 +133,7 @@ export function useCalendarData() {
     try {
       await AsyncStorage.setItem(CHART_EXERCISES_KEY, JSON.stringify(newExercises));
     } catch (error) {
-      console.error("Failed to save chart exercises:", error);
+
     }
   }, [selectedExercises]);
 
@@ -144,7 +144,7 @@ export function useCalendarData() {
     try {
       await AsyncStorage.setItem(CHART_EXERCISES_KEY, JSON.stringify(newExercises));
     } catch (error) {
-      console.error("Failed to save chart exercises:", error);
+
     }
   }, [selectedExercises]);
 
@@ -156,7 +156,7 @@ export function useCalendarData() {
     try {
       await AsyncStorage.setItem(CHART_EXERCISES_KEY, JSON.stringify([]));
     } catch (error) {
-      console.error("Failed to clear chart exercises:", error);
+
     }
   }, []);
 

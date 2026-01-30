@@ -39,7 +39,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
           setThemeState(savedTheme as ThemePreference);
         }
       } catch (error) {
-        console.error("Failed to load theme preference:", error);
+
       } finally {
         setIsLoaded(true);
       }
@@ -54,7 +54,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
       setThemeState(newTheme);
     } catch (error) {
-      console.error("Failed to save theme preference:", error);
+
     }
   }, []);
 

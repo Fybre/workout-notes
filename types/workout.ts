@@ -21,6 +21,7 @@ export interface Set {
   weight?: number;
   distance?: number;
   time?: number;
+  note?: string;
   timestamp: number;
   isPersonalBest?: boolean; // Computed field, not stored in DB
 }

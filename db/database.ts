@@ -1,69 +1,66 @@
+import type { ExerciseType } from "@/types/workout";
 import { Set } from "@/types/workout";
 import { generateId } from "@/utils/id";
 import { compareSets } from "@/utils/pb-utils";
-import type { ExerciseType } from "@/types/workout";
 import * as SQLite from "expo-sqlite";
 import { useSQLiteContext } from "expo-sqlite";
-import { INITIAL_EXERCISE_DEFINITIONS } from "./seedData_full";
 import { initializeSchemaVersion, runMigrations } from "./schema";
+import { INITIAL_EXERCISE_DEFINITIONS } from "./seedData";
 
 // Reference to the database instance managed by SQLiteProvider
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
+// Shared schema definition - single source of truth
+const SCHEMA_SQL = `
+  CREATE TABLE IF NOT EXISTS exercise_definitions (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    category TEXT NOT NULL,
+    type TEXT NOT NULL,
+    unit TEXT NOT NULL,
+    description TEXT,
+    createdAt INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS exercises (
+    id TEXT PRIMARY KEY,
+    definitionId TEXT NOT NULL,
+    date TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    FOREIGN KEY(definitionId) REFERENCES exercise_definitions(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS sets (
+    id TEXT PRIMARY KEY,
+    exerciseId TEXT NOT NULL,
+    weight REAL,
+    reps INTEGER,
+    distance REAL,
+    time INTEGER,
+    note TEXT,
+    timestamp INTEGER NOT NULL,
+    FOREIGN KEY(exerciseId) REFERENCES exercises(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_exercises_date ON exercises(date);
+  CREATE INDEX IF NOT EXISTS idx_sets_exerciseId ON sets(exerciseId);
+  CREATE INDEX IF NOT EXISTS idx_exercise_definitions_name ON exercise_definitions(name);
+`;
+
 // Called by SQLiteProvider's onInit - receives the managed database instance
 export async function initializeSchema(db: SQLite.SQLiteDatabase) {
-  console.log("[DEBUG] Initializing database schema...");
-
   // Store reference for use in non-component code
   dbInstance = db;
 
-  // Create new tables
-  await db.execAsync(`
-    CREATE TABLE IF NOT EXISTS exercise_definitions (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL UNIQUE,
-      category TEXT NOT NULL,
-      type TEXT NOT NULL,
-      unit TEXT NOT NULL,
-      description TEXT,
-      createdAt INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS exercises (
-      id TEXT PRIMARY KEY,
-      definitionId TEXT NOT NULL,
-      date TEXT NOT NULL,
-      createdAt INTEGER NOT NULL,
-      FOREIGN KEY(definitionId) REFERENCES exercise_definitions(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS sets (
-      id TEXT PRIMARY KEY,
-      exerciseId TEXT NOT NULL,
-      weight REAL,
-      reps INTEGER,
-      distance REAL,
-      time INTEGER,
-      timestamp INTEGER NOT NULL,
-      FOREIGN KEY(exerciseId) REFERENCES exercises(id)
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_exercises_date ON exercises(date);
-    CREATE INDEX IF NOT EXISTS idx_sets_exerciseId ON sets(exerciseId);
-    CREATE INDEX IF NOT EXISTS idx_exercise_definitions_name ON exercise_definitions(name);
-  `);
+  // Create tables using shared schema
+  await db.execAsync(SCHEMA_SQL);
 
   // Initialize schema version tracking and run any pending migrations
   await initializeSchemaVersion(db);
-  const migrationsApplied = await runMigrations(db);
-  if (migrationsApplied > 0) {
-    console.log(`[DEBUG] Applied ${migrationsApplied} migration(s)`);
-  }
+  await runMigrations(db);
 
   // Seed initial exercise definitions
   await seedInitialExerciseDefinitions();
-
-  console.log("[DEBUG] Database initialization completed successfully");
 }
 
 export function getDatabase() {
@@ -83,7 +80,7 @@ export async function addSet(exerciseId: string, set: Set) {
   const db = getDatabase();
 
   await db.runAsync(
-    "INSERT INTO sets (id, exerciseId, weight, reps, distance, time, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO sets (id, exerciseId, weight, reps, distance, time, note, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     [
       set.id,
       exerciseId,
@@ -91,6 +88,7 @@ export async function addSet(exerciseId: string, set: Set) {
       set.reps ?? null,
       set.distance ?? null,
       set.time ?? null,
+      set.note ?? null,
       set.timestamp,
     ],
   );
@@ -128,6 +126,10 @@ export async function updateSet(setId: string, updates: Partial<Set>) {
   if (updates.time !== undefined) {
     updateFields.push("time = ?");
     params.push(updates.time);
+  }
+  if (updates.note !== undefined) {
+    updateFields.push("note = ?");
+    params.push(updates.note);
   }
 
   params.push(setId);
@@ -178,6 +180,74 @@ export async function addExerciseDefinition(definition: {
   );
 }
 
+export async function updateExerciseDefinition(
+  id: string,
+  updates: {
+    name?: string;
+    category?: string;
+    type?: string;
+    unit?: string;
+    description?: string;
+  }
+) {
+  const db = getDatabase();
+
+  const updateFields: string[] = [];
+  const params: (string | null)[] = [];
+
+  if (updates.name !== undefined) {
+    updateFields.push("name = ?");
+    params.push(updates.name);
+  }
+  if (updates.category !== undefined) {
+    updateFields.push("category = ?");
+    params.push(updates.category);
+  }
+  if (updates.type !== undefined) {
+    updateFields.push("type = ?");
+    params.push(updates.type);
+  }
+  if (updates.unit !== undefined) {
+    updateFields.push("unit = ?");
+    params.push(updates.unit);
+  }
+  if (updates.description !== undefined) {
+    updateFields.push("description = ?");
+    params.push(updates.description || null);
+  }
+
+  if (updateFields.length === 0) return;
+
+  params.push(id);
+
+  await db.runAsync(
+    `UPDATE exercise_definitions SET ${updateFields.join(", ")} WHERE id = ?`,
+    params
+  );
+}
+
+export async function deleteExerciseDefinition(id: string) {
+  const db = getDatabase();
+
+  // First delete all sets for exercises using this definition
+  await db.runAsync(
+    `DELETE FROM sets WHERE exerciseId IN (SELECT id FROM exercises WHERE definitionId = ?)`,
+    [id]
+  );
+
+  // Then delete all exercises using this definition
+  await db.runAsync(
+    "DELETE FROM exercises WHERE definitionId = ?",
+    [id]
+  );
+
+  // Finally delete the definition
+  await db.runAsync(
+    "DELETE FROM exercise_definitions WHERE id = ?",
+    [id]
+  );
+}
+
 export async function getAllExerciseDefinitions(): Promise<
   {
     id: string;
@@ -198,6 +268,16 @@ export async function getAllExerciseDefinitions(): Promise<
     unit: string;
     description: string | null;
   }>("SELECT * FROM exercise_definitions ORDER BY name ASC");
+}
+
+export async function getUniqueCategories(): Promise<string[]> {
+  const db = getDatabase();
+
+  const results = await db.getAllAsync<{ category: string }>(
+    "SELECT DISTINCT category FROM exercise_definitions ORDER BY category ASC",
+  );
+
+  return results.map((r) => r.category);
 }
 
 export async function getExerciseDefinitionByName(name: string): Promise<{
@@ -248,7 +328,6 @@ export async function getExercisesForDate(date: string): Promise<
     sets: Set[];
   }[]
 > {
-  console.log(`[DEBUG] getExercisesForDate called with date: ${date}`);
   const startTime = Date.now();
   const db = getDatabase();
 
@@ -266,11 +345,12 @@ export async function getExercisesForDate(date: string): Promise<
     reps: number | null;
     distance: number | null;
     time: number | null;
+    note: string | null;
     timestamp: number;
   }>(
     `SELECT e.id as exercise_id, e.definitionId, e.date, e.createdAt,
             ed.name, ed.type, ed.category,
-            s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
+            s.id as set_id, s.weight, s.reps, s.distance, s.time, s.note, s.timestamp
      FROM exercises e
      JOIN exercise_definitions ed ON e.definitionId = ed.id
      LEFT JOIN sets s ON e.id = s.exerciseId
@@ -280,9 +360,6 @@ export async function getExercisesForDate(date: string): Promise<
   );
 
   const endTime = Date.now();
-  console.log(
-    `[DEBUG] Query completed in ${endTime - startTime}ms, found ${results.length} rows`,
-  );
 
   // Group results by exercise
   const exercisesMap = new Map<
@@ -323,15 +400,13 @@ export async function getExercisesForDate(date: string): Promise<
         reps: row.reps ?? undefined,
         distance: row.distance ?? undefined,
         time: row.time ?? undefined,
+        note: row.note ?? undefined,
         timestamp: row.timestamp,
       });
     }
   }
 
   const exercisesWithSets = Array.from(exercisesMap.values());
-  console.log(
-    `[DEBUG] Returning ${exercisesWithSets.length} exercises with sets`,
-  );
   return exercisesWithSets;
 }
 
@@ -544,11 +619,12 @@ export async function getAllExercisesWithSets(): Promise<
     reps: number | null;
     distance: number | null;
     time: number | null;
+    note: string | null;
     timestamp: number;
   }>(
     `SELECT e.id as exercise_id, e.definitionId, e.date, e.createdAt,
             ed.name, ed.type,
-            s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
+            s.id as set_id, s.weight, s.reps, s.distance, s.time, s.note, s.timestamp
      FROM exercises e
      JOIN exercise_definitions ed ON e.definitionId = ed.id
      LEFT JOIN sets s ON e.id = s.exerciseId
@@ -591,6 +667,7 @@ export async function getAllExercisesWithSets(): Promise<
         reps: row.reps ?? undefined,
         distance: row.distance ?? undefined,
         time: row.time ?? undefined,
+        note: row.note ?? undefined,
         timestamp: row.timestamp,
       });
     }
@@ -781,9 +858,10 @@ export async function getExerciseHistoryWithSets(
     reps: number | null;
     distance: number | null;
     time: number | null;
+    note: string | null;
     timestamp: number;
   }>(
-    `SELECT e.date, s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
+    `SELECT e.date, s.id as set_id, s.weight, s.reps, s.distance, s.time, s.note, s.timestamp
      FROM exercises e
      JOIN sets s ON e.id = s.exerciseId
      WHERE e.definitionId = ?
@@ -805,6 +883,7 @@ export async function getExerciseHistoryWithSets(
       reps: row.reps ?? undefined,
       distance: row.distance ?? undefined,
       time: row.time ?? undefined,
+      note: row.note ?? undefined,
       timestamp: row.timestamp,
     });
   }
@@ -816,9 +895,7 @@ export async function getExerciseHistoryWithSets(
   }
 
   // Sort by date descending and limit
-  return history
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, limit);
+  return history.sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit);
 }
 
 // Get exercise history with sets for a specific date range
@@ -854,9 +931,10 @@ export async function getExerciseHistoryWithSetsInRange(
     reps: number | null;
     distance: number | null;
     time: number | null;
+    note: string | null;
     timestamp: number;
   }>(
-    `SELECT e.date, s.id as set_id, s.weight, s.reps, s.distance, s.time, s.timestamp
+    `SELECT e.date, s.id as set_id, s.weight, s.reps, s.distance, s.time, s.note, s.timestamp
      FROM exercises e
      JOIN sets s ON e.id = s.exerciseId
      WHERE e.definitionId = ? AND e.date >= ? AND e.date <= ?
@@ -878,6 +956,7 @@ export async function getExerciseHistoryWithSetsInRange(
       reps: row.reps ?? undefined,
       distance: row.distance ?? undefined,
       time: row.time ?? undefined,
+      note: row.note ?? undefined,
       timestamp: row.timestamp,
     });
   }
@@ -906,51 +985,30 @@ export async function clearDatabase() {
         DROP TABLE IF EXISTS exercise_definitions;
       `);
 
-      // Recreate tables with the schema
-      await db.execAsync(`
-
-
-        CREATE TABLE IF NOT EXISTS exercise_definitions (
-          id TEXT PRIMARY KEY,
-          name TEXT NOT NULL UNIQUE,
-          category TEXT NOT NULL,
-          type TEXT NOT NULL,
-          unit TEXT NOT NULL,
-          description TEXT,
-          createdAt INTEGER NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS exercises (
-          id TEXT PRIMARY KEY,
-          definitionId TEXT NOT NULL,
-          date TEXT NOT NULL,
-          createdAt INTEGER NOT NULL,
-          FOREIGN KEY(definitionId) REFERENCES exercise_definitions(id)
-        );
-
-        CREATE TABLE IF NOT EXISTS sets (
-          id TEXT PRIMARY KEY,
-          exerciseId TEXT NOT NULL,
-          weight REAL,
-          reps INTEGER,
-          distance REAL,
-          time INTEGER,
-          timestamp INTEGER NOT NULL,
-          FOREIGN KEY(exerciseId) REFERENCES exercises(id)
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_exercises_date ON exercises(date);
-        CREATE INDEX IF NOT EXISTS idx_sets_exerciseId ON sets(exerciseId);
-        CREATE INDEX IF NOT EXISTS idx_exercise_definitions_name ON exercise_definitions(name);
-      `);
+      // Recreate tables using shared schema (single source of truth)
+      await db.execAsync(SCHEMA_SQL);
 
       // Clear and reseed exercise definitions
       await seedInitialExerciseDefinitions();
     });
-
-    console.log("[DEBUG] Database cleared and reset successfully");
   } catch (error) {
-    console.error("[DEBUG] Failed to clear database:", error);
+    throw error;
+  }
+}
+
+export async function clearWorkoutData() {
+  const db = getDatabase();
+
+  try {
+    // Use a transaction to ensure atomicity
+    await db.withTransactionAsync(async () => {
+      // Delete all sets (must be done first due to foreign key constraints)
+      await db.execAsync(`DELETE FROM sets;`);
+
+      // Delete all logged exercises
+      await db.execAsync(`DELETE FROM exercises;`);
+    });
+  } catch (error) {
     throw error;
   }
 }

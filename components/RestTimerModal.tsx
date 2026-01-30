@@ -47,7 +47,7 @@ export default function RestTimerModal({
         );
         soundRef.current = sound;
       } catch (error) {
-        console.log("Sound not available:", error);
+
       }
     };
 
@@ -105,7 +105,7 @@ export default function RestTimerModal({
     try {
       await soundRef.current?.replayAsync();
     } catch (error) {
-      console.log("Could not play sound:", error);
+
     }
   }, []);
 

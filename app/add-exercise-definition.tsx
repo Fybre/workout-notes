@@ -1,6 +1,6 @@
 import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   View as RNView,
@@ -9,11 +9,12 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { Text, View } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { addExerciseDefinition } from "@/db/database";
+import { addExerciseDefinition, getUniqueCategories } from "@/db/database";
 import type { ExerciseType } from "@/types/workout";
 import { generateId } from "@/utils/id";
 
@@ -33,22 +34,34 @@ export default function AddExerciseDefinitionScreen() {
 
   const [exercise, setExercise] = useState<ExerciseDefinition>({
     name: "",
-    category: "Chest",
+    category: "",
     type: "weight_reps",
     unit: "kg",
     description: "",
   });
 
-  const categories = [
-    "Chest",
-    "Back",
-    "Shoulders",
-    "Legs",
-    "Arms",
-    "Core",
-    "Cardio",
-    "Other",
-  ];
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [customCategory, setCustomCategory] = useState("");
+
+  // Load existing categories on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await getUniqueCategories();
+        setExistingCategories(categories);
+        
+        // Set default category if available
+        if (categories.length > 0 && !exercise.category) {
+          setExercise(prev => ({ ...prev, category: categories[0] }));
+        }
+      } catch (error) {
+
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const exerciseTypes: { label: string; value: ExerciseType }[] = [
     { label: "Weight & Reps", value: "weight_reps" },
@@ -70,12 +83,20 @@ export default function AddExerciseDefinitionScreen() {
       return;
     }
 
+    // Use custom category if in custom mode
+    const finalCategory = isCustomCategory ? customCategory.trim() : exercise.category;
+    
+    if (!finalCategory) {
+      Alert.alert("Error", "Category is required");
+      return;
+    }
+
     try {
       // Save to database
       await addExerciseDefinition({
         id: generateId(),
         name: exercise.name,
-        category: exercise.category,
+        category: finalCategory,
         type: exercise.type,
         unit: exercise.unit,
         description: exercise.description || undefined,
@@ -84,7 +105,7 @@ export default function AddExerciseDefinitionScreen() {
       Alert.alert("Success", "Exercise definition saved successfully");
       router.back();
     } catch (error) {
-      console.error("Failed to save exercise definition:", error);
+
       Alert.alert("Error", "Failed to save exercise definition");
     }
   };
@@ -107,6 +128,15 @@ export default function AddExerciseDefinitionScreen() {
       return ["kg", "lbs"];
     } else {
       return ["kg", "lbs", "km", "miles", "meters", "yards"];
+    }
+  };
+
+  const handleCategoryChange = (value: string) => {
+    if (value === "__CUSTOM__") {
+      setIsCustomCategory(true);
+    } else {
+      setIsCustomCategory(false);
+      setExercise({ ...exercise, category: value });
     }
   };
 
@@ -167,6 +197,8 @@ export default function AddExerciseDefinitionScreen() {
         {/* Category */}
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.text }]}>Category</Text>
+          
+          {/* Category Picker */}
           <RNView
             style={[
               styles.pickerContainer,
@@ -174,18 +206,36 @@ export default function AddExerciseDefinitionScreen() {
             ]}
           >
             <Picker
-              selectedValue={exercise.category}
-              onValueChange={(itemValue: string) =>
-                setExercise({ ...exercise, category: itemValue })
-              }
+              selectedValue={isCustomCategory ? "__CUSTOM__" : exercise.category}
+              onValueChange={handleCategoryChange}
               style={[styles.picker, { color: colors.text }]}
               dropdownIconColor={colors.tint}
             >
-              {categories.map((category) => (
+              {existingCategories.map((category) => (
                 <Picker.Item key={category} label={category} value={category} />
               ))}
+              <Picker.Item label="+ New Category" value="__CUSTOM__" />
             </Picker>
           </RNView>
+
+          {/* Custom Category Input */}
+          {isCustomCategory && (
+            <RNView
+              style={[
+                styles.textInputContainer,
+                { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 12 },
+              ]}
+            >
+              <TextInput
+                style={[styles.textInput, { color: colors.text }]}
+                value={customCategory}
+                onChangeText={setCustomCategory}
+                placeholder="Enter new category name"
+                placeholderTextColor={colors.textSecondary}
+                autoFocus
+              />
+            </RNView>
+          )}
         </View>
 
         {/* Exercise Type */}

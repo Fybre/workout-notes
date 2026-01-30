@@ -32,6 +32,7 @@ interface CsvRow {
   distance?: number;
   time?: number;
   timeFormatted?: string;
+  note?: string;
 }
 
 /**
@@ -92,6 +93,7 @@ async function fetchAllExerciseData(): Promise<CsvRow[]> {
     reps: number | null;
     distance: number | null;
     time: number | null;
+    note: string | null;
     timestamp: number;
   }>(
     `SELECT 
@@ -103,6 +105,7 @@ async function fetchAllExerciseData(): Promise<CsvRow[]> {
       s.reps,
       s.distance,
       s.time,
+      s.note,
       s.timestamp
     FROM exercises e
     JOIN exercise_definitions ed ON e.definitionId = ed.id
@@ -141,6 +144,7 @@ async function fetchAllExerciseData(): Promise<CsvRow[]> {
       distance: row.distance ?? undefined,
       time: row.time ?? undefined,
       timeFormatted: row.time ? formatTime(row.time) : undefined,
+      note: row.note ?? undefined,
     });
   }
 
@@ -163,6 +167,7 @@ function generateCsvContent(rows: CsvRow[]): string {
     "Distance",
     "Time (seconds)",
     "Time (formatted)",
+    "Note",
   ];
 
   let csv = headers.map(escapeCsvField).join(",") + "\n";
@@ -180,6 +185,7 @@ function generateCsvContent(rows: CsvRow[]): string {
       row.distance,
       row.time,
       row.timeFormatted,
+      row.note,
     ];
     csv += fields.map(escapeCsvField).join(",") + "\n";
   }
@@ -192,7 +198,7 @@ function generateCsvContent(rows: CsvRow[]): string {
  */
 export async function exportToCsv(): Promise<ExportResult> {
   try {
-    console.log("[Export] Starting CSV export...");
+
 
     // Fetch all data
     const data = await fetchAllExerciseData();
@@ -204,7 +210,7 @@ export async function exportToCsv(): Promise<ExportResult> {
       };
     }
 
-    console.log(`[Export] Fetched ${data.length} records`);
+
 
     // Generate CSV content
     const csvContent = generateCsvContent(data);
@@ -224,7 +230,7 @@ export async function exportToCsv(): Promise<ExportResult> {
     const fileInfo = await FileSystem.getInfoAsync(filePath);
     const fileSize = "size" in fileInfo ? fileInfo.size ?? 0 : 0;
 
-    console.log(`[Export] Created CSV: ${fileName} (${fileSize} bytes)`);
+
 
     return {
       success: true,
@@ -248,7 +254,7 @@ export async function shareCsv(fileUri: string, fileName: string): Promise<boole
   try {
     const isAvailable = await Sharing.isAvailableAsync();
     if (!isAvailable) {
-      console.error("[Export] Sharing is not available on this device");
+
       return false;
     }
 

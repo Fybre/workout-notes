@@ -41,6 +41,17 @@
             "newArchEnabled": true
           }
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Workout Notes to use the microphone for voice logging",
+          "speechRecognitionPermission": "Allow Workout Notes to use speech recognition for voice logging",
+          "androidRecognitionService": {
+            "packageName": "com.google.android.googlequicksearchbox",
+            "action": "android.speech.RecognitionService"
+          }
+        }
       ]
     ],
     "experiments": {

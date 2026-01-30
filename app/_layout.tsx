@@ -177,6 +177,28 @@ function RootLayoutNav() {
                 animation: "slide_from_bottom",
               }}
             />
+            <Stack.Screen
+              name="about"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.background,
+                },
+                animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="manage-exercises"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.background,
+                },
+                animation: "slide_from_bottom",
+              }}
+            />
           </Stack>
         </View>
       </ThemeProvider>

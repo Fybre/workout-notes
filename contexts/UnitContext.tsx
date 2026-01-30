@@ -66,7 +66,7 @@ export function UnitProvider({ children }: UnitProviderProps) {
           weightIncrement: isNaN(loadedIncrement) ? defaultIncrement : loadedIncrement,
         });
       } catch (error) {
-        console.error("[UnitContext] Failed to load preferences:", error);
+
       } finally {
         setIsLoading(false);
       }
@@ -80,7 +80,7 @@ export function UnitProvider({ children }: UnitProviderProps) {
       await AsyncStorage.setItem(WEIGHT_UNIT_KEY, unit);
       setPreferences((prev) => ({ ...prev, weightUnit: unit }));
     } catch (error) {
-      console.error("[UnitContext] Failed to save weight unit:", error);
+
     }
   };
 
@@ -89,7 +89,7 @@ export function UnitProvider({ children }: UnitProviderProps) {
       await AsyncStorage.setItem(DISTANCE_UNIT_KEY, unit);
       setPreferences((prev) => ({ ...prev, distanceUnit: unit }));
     } catch (error) {
-      console.error("[UnitContext] Failed to save distance unit:", error);
+
     }
   };
 
@@ -98,7 +98,7 @@ export function UnitProvider({ children }: UnitProviderProps) {
       await AsyncStorage.setItem(WEIGHT_INCREMENT_KEY, increment.toString());
       setPreferences((prev) => ({ ...prev, weightIncrement: increment }));
     } catch (error) {
-      console.error("[UnitContext] Failed to save weight increment:", error);
+
     }
   };
 

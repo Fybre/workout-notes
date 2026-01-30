@@ -49,6 +49,21 @@ export default function SelectExerciseScreen() {
   const [showOnlyUsed, setShowOnlyUsed] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // Auto-expand/collapse categories based on search query
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      // When searching, expand all categories that have matching exercises
+      const filtered = allExercises.filter((ex) =>
+        ex.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+      );
+      const categoriesWithMatches = new Set(filtered.map(ex => ex.category));
+      setExpandedCategories(categoriesWithMatches);
+    } else {
+      // When search is cleared, collapse all categories
+      setExpandedCategories(new Set());
+    }
+  }, [searchQuery, allExercises]);
+
   // Parse date from params using centralized utility
   const exerciseDate = parseDateParam(dateParam);
 
@@ -61,7 +76,7 @@ export default function SelectExerciseScreen() {
           setShowOnlyUsed(JSON.parse(savedValue));
         }
       } catch (error) {
-        console.error("Failed to load used filter preference:", error);
+
       }
     };
 
@@ -77,7 +92,7 @@ export default function SelectExerciseScreen() {
           JSON.stringify(showOnlyUsed)
         );
       } catch (error) {
-        console.error("Failed to save used filter preference:", error);
+
       }
     };
 
@@ -106,7 +121,7 @@ export default function SelectExerciseScreen() {
         setAllExercises(exercises);
         setUsedExerciseIds(usedIds);
       } catch (err) {
-        console.error("Failed to load exercise definitions:", err);
+
         setError("Failed to load exercises");
       } finally {
         setLoading(false);
@@ -239,7 +254,10 @@ export default function SelectExerciseScreen() {
     section: ExerciseSection;
   }) => {
     const isExpanded = expandedCategories.has(title);
-    const exerciseCount = allExercises.filter(ex => ex.category === title).length;
+    // Show filtered count when searching, otherwise show total
+    const totalCount = allExercises.filter(ex => ex.category === title).length;
+    const filteredCount = data.length;
+    const displayCount = searchQuery.trim() ? filteredCount : totalCount;
     
     return (
       <TouchableOpacity
@@ -250,7 +268,7 @@ export default function SelectExerciseScreen() {
         <Text style={[styles.sectionTitle, { color: colors.tint }]}>{title}</Text>
         <View style={styles.sectionHeaderRight}>
           <Text style={[styles.exerciseCount, { color: colors.textSecondary }]}>
-            {exerciseCount}
+            {displayCount}
           </Text>
           <FontAwesome
             name={isExpanded ? "chevron-up" : "chevron-down"}
@@ -261,6 +279,10 @@ export default function SelectExerciseScreen() {
         </View>
       </TouchableOpacity>
     );
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
   };
 
   if (loading) {
@@ -325,22 +347,33 @@ export default function SelectExerciseScreen() {
 
       {/* Search and Filter */}
       <View style={styles.searchContainer}>
-        <TextInput
-          style={[
-            styles.searchInput,
-            {
-              backgroundColor: colors.surface,
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="Search exercises..."
-          placeholderTextColor={colors.textSecondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
+        <View style={styles.searchInputWrapper}>
+          <TextInput
+            style={[
+              styles.searchInput,
+              {
+                backgroundColor: colors.surface,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            placeholder="Search exercises..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={clearSearch}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="times-circle" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
         <TouchableOpacity
           style={[
             styles.filterToggle,
@@ -465,13 +498,23 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 12,
   },
-  searchInput: {
+  searchInputWrapper: {
     flex: 1,
+    position: "relative",
+  },
+  searchInput: {
     height: 44,
     borderRadius: 10,
     paddingHorizontal: 16,
+    paddingRight: 40,
     fontSize: 16,
     borderWidth: 1,
+  },
+  clearButton: {
+    position: "absolute",
+    right: 12,
+    top: 13,
+    padding: 4,
   },
   filterToggle: {
     flexDirection: "row",

@@ -1,0 +1,247 @@
+[
+  {
+    "name": "Barbell Bench Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie flat on bench with feet planted firmly on floor. Grip bar slightly wider than shoulder-width, retract shoulder blades, and press bar up until arms fully extend. Lower with control to mid-chest, keeping elbows tucked at 45 degrees."
+  },
+  {
+    "name": "Dumbbell Bench Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie on flat bench holding dumbbells at shoulder level, palms facing forward. Press both dumbbells up until arms straight and dumbbells nearly touch. Lower slowly with control, feeling stretch across chest."
+  },
+  {
+    "name": "Incline Bench Press",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set bench to 30-45 degree incline. Lie back with feet flat on floor. Grip bar and press from upper chest, extending arms fully. Lower to upper chest/clavicle area, keeping shoulder blades retracted."
+  },
+  {
+    "name": "Push-ups",
+    "category": "Chest",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Start in plank position with hands slightly wider than shoulders. Lower body until chest nearly touches floor, keeping core tight. Push back to starting position, fully extending arms at top."
+  },
+  {
+    "name": "Chest Fly Machine",
+    "category": "Chest",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with back flat against pad, arms at 90 degrees on handles. Bring handles together in arc motion, squeezing chest at peak contraction. Return slowly with control, feeling deep stretch."
+  },
+  {
+    "name": "Barbell Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Bend at hips until torso nearly parallel to floor. Grip bar with overhand grip, hands slightly wider than shoulders. Pull bar to lower chest/upper abdomen, squeezing shoulder blades together. Lower with control."
+  },
+  {
+    "name": "Dumbbell Rows",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place one knee and hand on bench for support. Hold dumbbell in other hand, arm extended. Pull dumbbell to hip, keeping elbow close to body and squeezing lat at top. Lower fully before next rep."
+  },
+  {
+    "name": "Pull-ups",
+    "category": "Back",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hang from bar with overhand grip, hands shoulder-width or wider. Pull body up until chin clears bar, focusing on driving elbows down and back. Lower with control to full arm extension."
+  },
+  {
+    "name": "Lat Pulldown",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with thighs secured under pads. Grip bar wider than shoulders, palms facing forward. Pull bar to upper chest, driving elbows down and squeezing lats. Return slowly with arms fully extending."
+  },
+  {
+    "name": "Deadlifts",
+    "category": "Back",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand with feet hip-width, bar over mid-foot. Hinge at hips and grip bar just outside legs. Keep back flat, chest up. Push floor away, extending hips forward to lockout. Hinge at hips to lower bar with control."
+  },
+  {
+    "name": "Overhead Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand with bar at upper chest, grip slightly wider than shoulders. Brace core and press bar overhead until arms lock out. Lower with control to starting position, keeping bar close to face."
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit on bench with back support. Hold dumbbells at shoulder level, palms forward. Press both dumbbells up until arms extend, nearly touching at top. Lower with control to starting position."
+  },
+  {
+    "name": "Lateral Raises",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand holding dumbbells at sides with slight bend in elbows. Raise arms out to sides until parallel to floor, leading with pinky side. Lower slowly with control, resisting gravity."
+  },
+  {
+    "name": "Face Pulls",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Set cable at face height with rope attachment. Pull rope toward face, flaring elbows out to sides. Rotate hands outward at end position, squeezing rear delts and upper back. Return slowly."
+  },
+  {
+    "name": "Shrugs",
+    "category": "Shoulders",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold heavy dumbbells or barbell at sides. Shrug shoulders straight up toward ears, squeezing traps hard at top. Hold peak contraction briefly. Lower with control, feeling stretch at bottom."
+  },
+  {
+    "name": "Barbell Squat",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Place bar on upper back/traps. Stand with feet shoulder-width or slightly wider. Brace core, sit back and down until thighs parallel to floor. Drive through heels to stand, squeezing glutes at top."
+  },
+  {
+    "name": "Leg Press",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit in leg press machine with feet shoulder-width on platform. Lower platform by bending knees until 90 degrees. Push through heels to extend legs, without locking knees at top."
+  },
+  {
+    "name": "Leg Curl",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Lie face down or sit at leg curl machine. Position pad just above ankles. Curl heels toward glutes by flexing knees. Squeeze hamstrings at peak contraction. Lower with control."
+  },
+  {
+    "name": "Leg Extension",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Sit with back against pad, shins behind lower pad. Extend legs fully, squeezing quadriceps at top. Lower with control without letting weight stack touch. Great for quad isolation."
+  },
+  {
+    "name": "Lunges",
+    "category": "Legs",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Step forward with one leg, lowering hips until both knees are 90 degrees. Back knee nearly touches floor. Push through front heel to return to standing. Alternate legs."
+  },
+  {
+    "name": "Barbell Curl",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand holding barbell with underhand grip, hands shoulder-width. Curl bar toward shoulders, keeping elbows stationary at sides. Squeeze biceps at top, then lower with control."
+  },
+  {
+    "name": "Dumbbell Curl",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand or sit holding dumbbells at sides with palms facing forward. Curl both dumbbells toward shoulders, keeping elbows tucked. Rotate wrists outward as you curl. Lower slowly."
+  },
+  {
+    "name": "Tricep Dips",
+    "category": "Arms",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Use parallel bars or bench edge. Support body on hands with arms extended. Lower body by bending elbows until upper arms parallel to floor. Push back up to starting position."
+  },
+  {
+    "name": "Tricep Pushdown",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Stand at cable machine with bar or rope attachment. Keep elbows tucked at sides and push bar down until arms fully extend. Squeeze triceps at bottom. Return with control."
+  },
+  {
+    "name": "Hammer Curls",
+    "category": "Arms",
+    "type": "weight_reps",
+    "unit": "kg",
+    "description": "Hold dumbbells with neutral grip (palms facing each other). Curl both dumbbells toward shoulders keeping palms facing inward throughout. Targets brachialis and forearms."
+  },
+  {
+    "name": "Plank",
+    "category": "Core",
+    "type": "time_duration",
+    "unit": "seconds",
+    "description": "Support body on forearms and toes, elbows under shoulders. Keep body in straight line from head to heels. Engage core, glutes, and quads. Hold position while breathing normally."
+  },
+  {
+    "name": "Russian Twists",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Sit with knees bent and feet elevated or on floor. Lean back slightly, holding weight or clasping hands. Rotate torso side to side, touching weight to floor beside hips. Keep core engaged."
+  },
+  {
+    "name": "Leg Raises",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back with legs extended. Place hands under lower back for support. Lift legs together until perpendicular to floor, then lower with control without letting feet touch down."
+  },
+  {
+    "name": "Bicycle Crunches",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Lie on back, hands behind head. Bring opposite elbow to opposite knee while extending other leg. Rotate through torso, not just pulling with arms. Alternate sides in cycling motion."
+  },
+  {
+    "name": "Hanging Leg Raises",
+    "category": "Core",
+    "type": "reps",
+    "unit": "reps",
+    "description": "Hang from pull-up bar with arms extended. Lift legs together until parallel to floor or higher, using lower abs. Control descent without swinging. Minimize momentum."
+  },
+  {
+    "name": "Running",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Run at steady pace on treadmill, track, or outdoors. Maintain consistent breathing rhythm. Land midfoot and maintain upright posture. Vary intensity for different training effects."
+  },
+  {
+    "name": "Cycling",
+    "category": "Cardio",
+    "type": "distance_time",
+    "unit": "minutes",
+    "description": "Ride stationary bike or outdoors. Adjust resistance for desired intensity. Maintain cadence of 60-100 RPM depending on goals. Keep core engaged and back neutral."
+  },
+  {
+    "name": "Jump Rope",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Hold rope handles with elbows at sides. Jump with both feet, clearing rope as it passes under. Stay light on balls of feet. Vary speed and technique for intensity."
+  },
+  {
+    "name": "Burpees",
+    "category": "Cardio",
+    "type": "reps_time",
+    "unit": "minutes",
+    "description": "Drop to floor into plank, perform push-up, jump feet in, explosively jump up reaching overhead. High-intensity full-body exercise. Modify by eliminating push-up or jump if needed."
+  },
+  {
+    "name": "HIIT",
+    "category": "Cardio",
+    "type": "time_duration",
+    "unit": "minutes",
+    "description": "High Intensity Interval Training. Alternate short bursts of maximum effort with brief recovery periods. Can use any exercise modality. Highly efficient for fitness and fat loss."
+  }
+]

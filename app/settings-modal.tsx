@@ -1,7 +1,7 @@
 import { Text } from "@/components/Themed";
 import { useColorScheme, useTheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { clearDatabase } from "@/db/database";
+import { clearDatabase, clearWorkoutData } from "@/db/database";
 import {
   createAndShareBackup,
   pickAndRestoreBackup,
@@ -57,7 +57,7 @@ export default function SettingsModal() {
           setRestTimerSettings(JSON.parse(saved));
         }
       } catch (error) {
-        console.error("Failed to load rest timer settings:", error);
+
       }
     };
 
@@ -86,7 +86,7 @@ export default function SettingsModal() {
         JSON.stringify(newSettings),
       );
     } catch (error) {
-      console.error("Failed to save rest timer settings:", error);
+
     }
   };
 
@@ -157,24 +157,50 @@ export default function SettingsModal() {
     );
   };
 
-  const handleClearDatabase = () => {
+  const handleClearWorkoutData = () => {
     Alert.alert(
-      "Clear All Data",
-      "Are you sure you want to permanently delete all your workout data? This cannot be undone.",
+      "Clear Workout Data",
+      "Are you sure you want to delete all your logged workouts and sets? Your custom exercise definitions will be preserved. This cannot be undone.",
       [
         {
           text: "Cancel",
           style: "cancel",
         },
         {
-          text: "Clear All Data",
+          text: "Clear Workouts",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearWorkoutData();
+              Alert.alert("Success", "All workout data has been cleared. Your exercise definitions have been preserved.");
+            } catch (error) {
+
+              Alert.alert("Error", "Failed to clear workout data.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleClearDatabase = () => {
+    Alert.alert(
+      "Clear All Data",
+      "Are you sure you want to permanently delete ALL your data? This includes all workout logs, sets, AND custom exercise definitions. This cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear Everything",
           style: "destructive",
           onPress: async () => {
             try {
               await clearDatabase();
-              Alert.alert("Success", "All workout data has been cleared.");
+              Alert.alert("Success", "All data has been cleared. The app has been reset to its initial state.");
             } catch (error) {
-              console.error("Failed to clear database:", error);
+
               Alert.alert("Error", "Failed to clear database.");
             }
           },
@@ -573,6 +599,29 @@ export default function SettingsModal() {
                 styles.dangerSettingItem,
                 { borderBottomColor: "#ef4444", backgroundColor: "#fef2f2" },
               ]}
+              onPress={handleClearWorkoutData}
+              disabled={isBackingUp || isRestoring}
+            >
+              <View>
+                <Text style={[styles.dangerSettingLabel, { color: "#dc2626" }]}>
+                  Clear Workout Data
+                </Text>
+                <Text
+                  style={[styles.dangerSettingHint, { color: "#ef4444" }]}
+                >
+                  Delete logged workouts, keep exercise definitions
+                </Text>
+              </View>
+              <Text style={[styles.settingValue, { color: "#ef4444" }]}>
+                📝
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.dangerSettingItem,
+                { borderBottomColor: "#ef4444", backgroundColor: "#fef2f2" },
+              ]}
               onPress={handleClearDatabase}
               disabled={isBackingUp || isRestoring}
             >
@@ -583,11 +632,30 @@ export default function SettingsModal() {
                 <Text
                   style={[styles.dangerSettingHint, { color: "#ef4444" }]}
                 >
-                  Permanently delete all workout data
+                  Reset everything including custom exercises
                 </Text>
               </View>
               <Text style={[styles.settingValue, { color: "#ef4444" }]}>
                 🗑️
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Exercise Database Section */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Exercise Database
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.settingItem, { borderBottomColor: colors.border }]}
+              onPress={() => router.push("/manage-exercises")}
+            >
+              <Text style={[styles.settingLabel, { color: colors.text }]}>
+                Manage Exercises
+              </Text>
+              <Text style={[styles.settingValue, { color: colors.tint }]}>
+                →
               </Text>
             </TouchableOpacity>
           </View>
@@ -598,29 +666,12 @@ export default function SettingsModal() {
               About
             </Text>
 
-            <TouchableOpacity style={styles.settingItem}>
+            <TouchableOpacity
+              style={[styles.settingItem, { borderBottomColor: colors.border }]}
+              onPress={() => router.push("/about")}
+            >
               <Text style={[styles.settingLabel, { color: colors.text }]}>
-                App Version
-              </Text>
-              <Text
-                style={[styles.settingValue, { color: colors.textSecondary }]}
-              >
-                1.0.0
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.settingItem}>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Privacy Policy
-              </Text>
-              <Text style={[styles.settingValue, { color: colors.tint }]}>
-                →
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.settingItem}>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Terms of Service
+                About Workout Notes
               </Text>
               <Text style={[styles.settingValue, { color: colors.tint }]}>
                 →

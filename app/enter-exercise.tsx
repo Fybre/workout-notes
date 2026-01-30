@@ -9,7 +9,22 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+
+// Voice recognition - gracefully handle if module isn't available
+let ExpoSpeechRecognitionModule: any;
+let useSpeechRecognitionEvent: any;
+let voiceRecognitionAvailable = false;
+try {
+  const speechModule = require("expo-speech-recognition");
+  ExpoSpeechRecognitionModule = speechModule.ExpoSpeechRecognitionModule;
+  useSpeechRecognitionEvent = speechModule.useSpeechRecognitionEvent;
+  voiceRecognitionAvailable = true;
+} catch {
+  // Module not available
+}
 
 import Celebration from "@/components/Celebration";
 import EditSetModal from "@/components/EditSetModal";
@@ -61,6 +76,8 @@ interface WorkoutSet {
   reps?: number;
   distance?: number;
   time?: number;
+  note?: string;
+  isPersonalBest: boolean;
 }
 
 export default function EnterWorkoutScreen() {
@@ -106,6 +123,8 @@ export default function EnterWorkoutScreen() {
           reps: s.reps,
           distance: s.distance,
           time: s.time,
+          note: s.note,
+          isPersonalBest: s.isPersonalBest,
         }));
       } catch {
         return [];
@@ -120,7 +139,7 @@ export default function EnterWorkoutScreen() {
   const [editingSet, setEditingSet] = useState<WorkoutSet | null>(null);
   const [exerciseId] = useState(() => paramExerciseId || generateId());
   const [exerciseSaved, setExerciseSaved] = useState(() => !!paramExerciseId);
-  const [personalBest, setPersonalBest] = useState<Set | null>(null);
+  const [personalBest, setPersonalBest] = useState<WorkoutSet | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [newPBSet, setNewPBSet] = useState<WorkoutSet | null>(null);
   const [exerciseDescription, setExerciseDescription] = useState<string | null>(
@@ -141,6 +160,15 @@ export default function EnterWorkoutScreen() {
   );
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [autoStartTimer, setAutoStartTimer] = useState(false);
+
+  // Note input state
+  const [currentNote, setCurrentNote] = useState<string>("");
+  const [showNoteModal, setShowNoteModal] = useState(false);
+
+  // Voice recognition state
+  const [isListening, setIsListening] = useState(false);
+  const [voicePreviewSet, setVoicePreviewSet] = useState<WorkoutSet | null>(null);
+  const [showVoicePreview, setShowVoicePreview] = useState(false);
 
   // Populate input values based on history
   useEffect(() => {
@@ -190,7 +218,7 @@ export default function EnterWorkoutScreen() {
           setRestTimerSettings(JSON.parse(saved));
         }
       } catch (error) {
-        console.error("Failed to load rest timer settings:", error);
+
       }
     };
 
@@ -274,7 +302,7 @@ export default function EnterWorkoutScreen() {
         setExerciseSaved(true); // Mark as saved to prevent duplicate creation
       } catch (error) {
         Alert.alert("Error", "Failed to save exercise");
-        console.error(error);
+
         return;
       }
     }
@@ -285,10 +313,17 @@ export default function EnterWorkoutScreen() {
       reps: exerciseType.includes("reps") ? reps : undefined,
       distance: exerciseType.includes("distance") ? distance : undefined,
       time: exerciseType.includes("time") ? time : undefined,
+      note: currentNote.trim() || undefined,
+      isPersonalBest: false,
     };
 
     // Check if this is a new personal best
     const isPB = isNewPersonalBest(newSet, personalBest, exerciseType);
+
+    // Mark as PB if applicable
+    if (isPB) {
+      newSet.isPersonalBest = true;
+    }
 
     // Save to database
     try {
@@ -298,6 +333,7 @@ export default function EnterWorkoutScreen() {
         reps: newSet.reps,
         distance: newSet.distance,
         time: newSet.time,
+        note: newSet.note,
         timestamp: Date.now(),
       });
     } catch (error) {
@@ -306,7 +342,13 @@ export default function EnterWorkoutScreen() {
       return;
     }
 
-    setSets([...sets, newSet]);
+    // If this is a new PB, clear the PB flag from all previous sets in this session
+    // so only the current best shows the badge
+    if (isPB) {
+      setSets(sets.map(s => ({ ...s, isPersonalBest: false })).concat(newSet));
+    } else {
+      setSets([...sets, newSet]);
+    }
 
     // If PB, update the PB display and trigger celebration
     if (isPB) {
@@ -329,7 +371,7 @@ export default function EnterWorkoutScreen() {
           Haptics.NotificationFeedbackType.Success,
         );
       } catch (error) {
-        console.log("Haptic feedback not available:", error);
+
       }
     } else {
       // Regular haptic for normal set
@@ -338,7 +380,7 @@ export default function EnterWorkoutScreen() {
           Haptics.NotificationFeedbackType.Success,
         );
       } catch (error) {
-        console.log("Haptic feedback not available:", error);
+
       }
     }
 
@@ -347,6 +389,9 @@ export default function EnterWorkoutScreen() {
       setAutoStartTimer(true);
       setShowRestTimer(true);
     }
+
+    // Clear the note for the next set
+    setCurrentNote("");
 
     // Keep the current values for quick entry of another set
     // Don't reset the inputs
@@ -384,7 +429,7 @@ export default function EnterWorkoutScreen() {
         await updateSet(editingSet.id, updates);
       } catch (error) {
         Alert.alert("Error", "Failed to update set");
-        console.error(error);
+
         return;
       }
 
@@ -406,6 +451,287 @@ export default function EnterWorkoutScreen() {
         pathname: "/(tabs)",
         params: { date: exerciseDate },
       });
+    }
+  };
+
+  // Parse voice input for weight, reps, and notes
+  // Supports patterns like:
+  // - "220 by 10" → weight: 220, reps: 10
+  // - "220 for 10" → weight: 220, reps: 10
+  // - "220 times 10" → weight: 220, reps: 10
+  // - "220 x 10" → weight: 220, reps: 10
+  // - "220 by 10 with notes felt easy" → weight: 220, reps: 10, note: "felt easy"
+  const parseVoiceInput = (text: string): { weight?: number; reps?: number; note?: string } => {
+    const result: { weight?: number; reps?: number; note?: string } = {};
+    const lowerText = text.toLowerCase();
+    
+    // Extract note - look for "with notes" or "note" followed by text
+    const notePatterns = [
+      /with notes?\s+(.+)$/i,
+      /note[:,]?\s+(.+)$/i,
+      /notes?[:,]?\s+(.+)$/i,
+    ];
+    
+    let remainingText = text;
+    for (const pattern of notePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        result.note = match[1].trim();
+        remainingText = text.replace(match[0], '').trim();
+        break;
+      }
+    }
+    
+    // Extract weight and reps
+    // Pattern: number [by/for/times/x] number
+    const weightRepPattern = /(\d+(?:\.\d+)?)\s*(?:by|for|times|x)\s*(\d+)/i;
+    const weightRepMatch = remainingText.match(weightRepPattern);
+    
+    if (weightRepMatch) {
+      result.weight = parseFloat(weightRepMatch[1]);
+      result.reps = parseInt(weightRepMatch[2], 10);
+    } else {
+      // Try single number (assume it's weight if exercise type uses weight)
+      const singleNumber = remainingText.match(/(\d+(?:\.\d+)?)/);
+      if (singleNumber) {
+        const num = parseFloat(singleNumber[1]);
+        // If exercise type uses weight, assume it's weight
+        if (exerciseType.includes("weight")) {
+          result.weight = num;
+        }
+        // If exercise type uses reps, assume it's reps
+        if (exerciseType.includes("reps")) {
+          result.reps = num;
+        }
+      }
+    }
+    
+    return result;
+  };
+
+  // Set up speech recognition event listeners (only if module is available)
+  if (voiceRecognitionAvailable && useSpeechRecognitionEvent) {
+    useSpeechRecognitionEvent("result", (event: any) => {
+      setIsListening(false);
+      
+      if (event.results && event.results.length > 0) {
+        const transcript = event.results[0].transcript;
+        
+        if (transcript) {
+          const parsed = parseVoiceInput(transcript);
+          
+          // Create preview set
+          const preview: WorkoutSet = {
+            id: generateId(),
+            weight: parsed.weight,
+            reps: parsed.reps,
+            note: parsed.note,
+            isPersonalBest: false,
+          };
+          
+          setVoicePreviewSet(preview);
+          setShowVoicePreview(true);
+        }
+      }
+    });
+
+    useSpeechRecognitionEvent("error", (event: any) => {
+      setIsListening(false);
+
+      Alert.alert("Voice Error", "Could not understand. Please try again.");
+    });
+  }
+
+  const startVoiceRecognition = async () => {
+    if (!voiceRecognitionAvailable || !ExpoSpeechRecognitionModule) {
+      Alert.alert(
+        "Voice Recognition Unavailable",
+        "Voice recognition requires a development build. It is not available in Expo Go."
+      );
+      return;
+    }
+    
+    try {
+      // Check permissions
+      const { status } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Please grant microphone and speech recognition permissions to use voice logging."
+        );
+        return;
+      }
+
+      setIsListening(true);
+      
+      // Haptic feedback to indicate start
+      try {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {
+        // Ignore haptic errors
+      }
+
+      // Start listening
+      ExpoSpeechRecognitionModule.start({
+        lang: "en-US",
+        interimResults: false,
+        maxAlternatives: 1,
+        requiresOnDeviceRecognition: false,
+      });
+    } catch (error) {
+      setIsListening(false);
+
+      Alert.alert("Error", "Voice recognition is not available on this device.");
+    }
+  };
+
+  const stopVoiceRecognition = async () => {
+    try {
+      ExpoSpeechRecognitionModule.abort();
+    } catch {
+      // Ignore errors
+    }
+    setIsListening(false);
+  };
+
+  const handleVoicePreviewConfirm = async () => {
+    if (!voicePreviewSet) return;
+
+    // Close preview modal
+    setShowVoicePreview(false);
+
+    // Save exercise on first set (same as handleAddSet)
+    if (!exerciseSaved) {
+      try {
+        let definition = await getExerciseDefinitionByName(
+          exerciseName || "Unknown",
+        );
+
+        if (!definition) {
+          await addExerciseDefinition({
+            id: generateId(),
+            name: exerciseName || "Unknown",
+            category: "Custom",
+            type: exerciseType,
+            unit: exerciseType.includes("weight")
+              ? "kg"
+              : exerciseType.includes("distance")
+                ? "km"
+                : exerciseType.includes("time")
+                  ? "s"
+                  : "reps",
+            description: "Custom exercise",
+          });
+
+          definition = await getExerciseDefinitionByName(
+            exerciseName || "Unknown",
+          );
+        }
+
+        if (definition) {
+          await addExerciseWithDefinition({
+            id: exerciseId,
+            definitionId: definition.id,
+            date: exerciseDate,
+          });
+        } else {
+          throw new Error("Failed to create exercise definition");
+        }
+
+        setExerciseSaved(true);
+      } catch (error) {
+        Alert.alert("Error", "Failed to save exercise");
+
+        setVoicePreviewSet(null);
+        return;
+      }
+    }
+
+    // Create the set from voice preview values
+    // Convert weight from user units to kg if needed
+    const weightKg = voicePreviewSet.weight !== undefined && weightUnit === "lbs"
+      ? lbsToKg(voicePreviewSet.weight)
+      : voicePreviewSet.weight;
+
+    const newSet: WorkoutSet = {
+      id: generateId(),
+      weight: exerciseType.includes("weight") ? weightKg : undefined,
+      reps: exerciseType.includes("reps") ? voicePreviewSet.reps : undefined,
+      distance: exerciseType.includes("distance") ? voicePreviewSet.distance : undefined,
+      time: exerciseType.includes("time") ? voicePreviewSet.time : undefined,
+      note: voicePreviewSet.note,
+      isPersonalBest: false,
+    };
+
+    // Check if this is a new personal best
+    const isPB = isNewPersonalBest(newSet, personalBest, exerciseType);
+    if (isPB) {
+      newSet.isPersonalBest = true;
+    }
+
+    // Save to database
+    try {
+      await addSet(exerciseId, {
+        id: newSet.id,
+        weight: newSet.weight,
+        reps: newSet.reps,
+        distance: newSet.distance,
+        time: newSet.time,
+        note: newSet.note,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to save set");
+      console.error(error);
+      setVoicePreviewSet(null);
+      return;
+    }
+
+    // Update sets state
+    if (isPB) {
+      setSets(sets.map(s => ({ ...s, isPersonalBest: false })).concat(newSet));
+    } else {
+      setSets([...sets, newSet]);
+    }
+
+    // Clear voice preview
+    setVoicePreviewSet(null);
+
+    // Handle PB celebration
+    if (isPB) {
+      const pbSet: Set = {
+        id: newSet.id,
+        weight: newSet.weight,
+        reps: newSet.reps,
+        distance: newSet.distance,
+        time: newSet.time,
+        timestamp: Date.now(),
+      };
+      setPersonalBest(pbSet);
+      setNewPBSet(newSet);
+      setShowCelebration(true);
+
+      try {
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      } catch {
+        // Ignore
+      }
+    } else {
+      try {
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      } catch {
+        // Ignore
+      }
+    }
+
+    // Auto-start rest timer if enabled
+    if (restTimerSettings.autoStart) {
+      setAutoStartTimer(true);
+      setShowRestTimer(true);
     }
   };
 
@@ -499,7 +825,7 @@ export default function EnterWorkoutScreen() {
               style={styles.infoButton}
               activeOpacity={0.7}
             >
-              <Text style={[styles.infoIcon, { color: colors.tint }]}>ⓘ</Text>
+              <FontAwesome name="question-circle-o" size={24} color={colors.tint} />
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -510,18 +836,11 @@ export default function EnterWorkoutScreen() {
             style={styles.stopwatchButton}
             activeOpacity={0.7}
           >
-            <Text
-              style={[
-                styles.stopwatchIcon,
-                {
-                  color: restTimerSettings.autoStart
-                    ? colors.success
-                    : colors.tint,
-                },
-              ]}
-            >
-              ⏱️
-            </Text>
+            <FontAwesome
+              name={restTimerSettings.autoStart ? "bell" : "bell-o"}
+              size={24}
+              color={colors.tint}
+            />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Text style={[styles.closeText, { color: colors.tint }]}>✕</Text>
@@ -789,23 +1108,69 @@ export default function EnterWorkoutScreen() {
           </View>
         </View>
 
-        {/* Add Set Button */}
-        <TouchableOpacity
-          style={[
-            styles.addSetButton,
-            {
-              backgroundColor: colors.tint,
-              opacity: canAddSet ? 1 : 0.4,
-            },
-          ]}
-          onPress={handleAddSet}
-          activeOpacity={0.8}
-          disabled={!canAddSet}
-        >
-          <Text style={[styles.addSetButtonText, { color: "#ffffff" }]}>
-            Add Set
-          </Text>
-        </TouchableOpacity>
+        {/* Note Button, Add Set Button & Voice Button */}
+        <View style={styles.addSetRow}>
+          <TouchableOpacity
+            style={[
+              styles.noteButton,
+              { 
+                backgroundColor: currentNote ? `${colors.tint}30` : colors.surface,
+                borderColor: currentNote ? colors.tint : colors.border,
+              },
+            ]}
+            onPress={() => setShowNoteModal(true)}
+            activeOpacity={0.7}
+          >
+            <FontAwesome 
+              name={currentNote ? "sticky-note" : "sticky-note-o"} 
+              size={24} 
+              color={currentNote ? colors.tint : colors.textSecondary}
+            />
+            {currentNote && <View style={[styles.noteIndicator, { backgroundColor: colors.tint }]} />}
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[
+              styles.addSetButton,
+              {
+                backgroundColor: colors.tint,
+                opacity: canAddSet ? 1 : 0.4,
+                flex: 1,
+              },
+            ]}
+            onPress={handleAddSet}
+            activeOpacity={0.8}
+            disabled={!canAddSet}
+          >
+            <Text style={[styles.addSetButtonText, { color: "#ffffff" }]}>
+              Add Set
+            </Text>
+          </TouchableOpacity>
+          
+          {voiceRecognitionAvailable && (
+            <TouchableOpacity
+              style={[
+                styles.voiceButton,
+                { 
+                  backgroundColor: isListening ? `${colors.tint}30` : colors.surface,
+                  borderColor: isListening ? colors.tint : colors.border,
+                },
+              ]}
+              onPress={isListening ? stopVoiceRecognition : startVoiceRecognition}
+              activeOpacity={0.7}
+            >
+              {isListening ? (
+                <ActivityIndicator size="small" color={colors.tint} />
+              ) : (
+                <FontAwesome 
+                  name="microphone" 
+                  size={24} 
+                  color={colors.textSecondary}
+                />
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Sets List */}
         {sets.length > 0 && (
@@ -820,7 +1185,7 @@ export default function EnterWorkoutScreen() {
                   styles.setRow,
                   { backgroundColor: colors.surface },
                   { borderColor: colors.border },
-                  personalBest?.id === set.id && styles.setRowPB,
+                  set.isPersonalBest && styles.setRowPB,
                 ]}
                 onPress={() => handleEditSet(set)}
                 activeOpacity={0.6}
@@ -831,15 +1196,20 @@ export default function EnterWorkoutScreen() {
                   >
                     Set {index + 1}
                   </Text>
-                  {personalBest?.id === set.id && (
+                  {set.isPersonalBest && (
                     <Text style={[styles.pbBadge, { color: colors.success }]}>
                       🏆 PB
                     </Text>
                   )}
                 </View>
-                <Text style={[styles.setData, { color: colors.text }]}>
-                  {formatSetForDisplay(exerciseType, set, { weightUnit, distanceUnit })}
-                </Text>
+                <View style={styles.setDataRow}>
+                  <Text style={[styles.setData, { color: colors.text }]}>
+                    {formatSetForDisplay(exerciseType, set, { weightUnit, distanceUnit })}
+                  </Text>
+                  {set.note && (
+                    <FontAwesome name="sticky-note" size={14} color={colors.tint} style={styles.noteIcon} />
+                  )}
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -854,6 +1224,7 @@ export default function EnterWorkoutScreen() {
         reps={editingSet?.reps || 0}
         distance={editingSet?.distance || 0}
         time={editingSet?.time || 0}
+        note={editingSet?.note}
         setNumber={
           editingSet
             ? sets.findIndex((s) => s.id === editingSet.id) + 1
@@ -869,7 +1240,31 @@ export default function EnterWorkoutScreen() {
         onClose={() => setEditingSet(null)}
       />
 
+      {/* Voice Preview Modal - Reuses EditSetModal for confirmation */}
+      <EditSetModal
+        visible={showVoicePreview}
+        exerciseType={exerciseType}
+        weight={voicePreviewSet?.weight || 0}
+        reps={voicePreviewSet?.reps || 0}
+        distance={voicePreviewSet?.distance || 0}
+        time={voicePreviewSet?.time || 0}
+        note={voicePreviewSet?.note}
+        setNumber={undefined}
+        onSave={() => {
+          handleVoicePreviewConfirm();
+        }}
+        onDelete={() => {
+          setShowVoicePreview(false);
+          setVoicePreviewSet(null);
+        }}
+        onClose={() => {
+          setShowVoicePreview(false);
+          setVoicePreviewSet(null);
+        }}
+      />
+
       {/* Rest Timer Modal */}
+
       <RestTimerModal
         visible={showRestTimer}
         initialTime={restTimerSettings.defaultTime}
@@ -1036,6 +1431,63 @@ export default function EnterWorkoutScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Note Input Modal */}
+      <Modal
+        visible={showNoteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowNoteModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.noteModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowNoteModal(false)}
+        >
+          <View
+            style={[styles.noteModalContent, { backgroundColor: colors.surface }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text style={[styles.noteModalTitle, { color: colors.text }]}>
+              Add Note
+            </Text>
+            <TextInput
+              style={[
+                styles.noteModalInput,
+                { color: colors.text, backgroundColor: colors.background, borderColor: colors.border },
+              ]}
+              placeholder="Enter a note for this set..."
+              placeholderTextColor={colors.textSecondary}
+              value={currentNote}
+              onChangeText={setCurrentNote}
+              multiline
+              maxLength={100}
+              autoFocus
+            />
+            <View style={styles.noteModalButtons}>
+              <TouchableOpacity
+                style={[styles.noteModalButton, { backgroundColor: colors.border }]}
+                onPress={() => {
+                  setCurrentNote("");
+                  setShowNoteModal(false);
+                }}
+              >
+                <Text style={[styles.noteModalButtonText, { color: colors.text }]}>
+                  Clear
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.noteModalButton, { backgroundColor: colors.tint }]}
+                onPress={() => setShowNoteModal(false)}
+              >
+                <Text style={[styles.noteModalButtonText, { color: "#ffffff" }]}>
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -1092,14 +1544,8 @@ const styles = StyleSheet.create({
   infoButton: {
     padding: 8,
   },
-  infoIcon: {
-    fontSize: 24,
-  },
   stopwatchButton: {
     padding: 8,
-  },
-  stopwatchIcon: {
-    fontSize: 24,
   },
   closeButton: {
     padding: 8,
@@ -1347,5 +1793,92 @@ const styles = StyleSheet.create({
   oneRMDisclaimer: {
     fontSize: 12,
     fontStyle: "italic",
+  },
+  setDataRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  noteIcon: {
+    marginLeft: 4,
+  },
+  // Add Set Row with Note Button
+  addSetRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  voiceButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noteButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+
+  noteIndicator: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  // Note Modal Styles
+  noteModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  noteModalContent: {
+    width: "90%",
+    maxWidth: 400,
+    borderRadius: 16,
+    padding: 20,
+  },
+  noteModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  noteModalInput: {
+    height: 100,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    textAlignVertical: "top",
+    marginBottom: 16,
+  },
+  noteModalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  noteModalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  noteModalButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

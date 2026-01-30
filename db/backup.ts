@@ -85,7 +85,6 @@ export async function createBackup(): Promise<BackupResult> {
     const backupInfo = await FileSystem.getInfoAsync(backupPath);
     const fileSize = "size" in backupInfo ? backupInfo.size ?? 0 : 0;
 
-    console.log(`[Backup] Created backup: ${backupFileName} (${formatFileSize(fileSize)})`);
 
     return {
       success: true,
@@ -94,7 +93,6 @@ export async function createBackup(): Promise<BackupResult> {
       fileSize,
     };
   } catch (error) {
-    console.error("[Backup] Failed to create backup:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -109,7 +107,6 @@ export async function shareBackup(fileUri: string): Promise<boolean> {
   try {
     const isAvailable = await Sharing.isAvailableAsync();
     if (!isAvailable) {
-      console.error("[Backup] Sharing is not available on this device");
       return false;
     }
 
@@ -121,7 +118,6 @@ export async function shareBackup(fileUri: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error("[Backup] Failed to share backup:", error);
     return false;
   }
 }
@@ -173,12 +169,10 @@ export async function validateBackupFile(fileUri: string): Promise<{
     const fileName = fileUri.split("/").pop()?.toLowerCase() ?? "";
     if (!fileName.endsWith(".db") && !fileName.endsWith(".sqlite") && !fileName.endsWith(".sqlite3")) {
       // Still allow it, but warn - the user might have renamed the file
-      console.warn("[Backup] File doesn't have standard SQLite extension");
     }
 
     return { valid: true };
   } catch (error) {
-    console.error("[Backup] Validation failed:", error);
     return {
       valid: false,
       error: error instanceof Error ? error.message : "Validation failed",
@@ -216,11 +210,9 @@ export async function restoreFromBackup(sourceUri: string): Promise<RestoreResul
           from: dbPath,
           to: safetyBackupPath,
         });
-        console.log("[Backup] Created safety backup before restore");
       }
     } catch {
       // Current DB might not exist, that's ok
-      console.log("[Backup] No existing database to backup");
     }
 
     // Copy backup file to database location
@@ -229,14 +221,11 @@ export async function restoreFromBackup(sourceUri: string): Promise<RestoreResul
       to: dbPath,
     });
 
-    console.log("[Backup] Database restored successfully");
-
     return {
       success: true,
       requiresRestart: true,
     };
   } catch (error) {
-    console.error("[Backup] Restore failed:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Restore failed",
@@ -264,7 +253,6 @@ export async function pickAndRestoreBackup(): Promise<RestoreResult> {
     const file = result.assets[0];
     return await restoreFromBackup(file.uri);
   } catch (error) {
-    console.error("[Backup] Document picker failed:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to pick file",

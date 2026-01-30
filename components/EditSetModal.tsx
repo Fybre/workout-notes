@@ -25,12 +25,14 @@ interface EditSetModalProps {
   reps: number;
   distance: number;
   time: number;
+  note?: string;
   setNumber?: number;
   onSave: (updates: {
     weight?: number;
     reps?: number;
     distance?: number;
     time?: number;
+    note?: string;
   }) => void;
   onDelete: () => void;
   onClose: () => void;
@@ -43,6 +45,7 @@ export default function EditSetModal({
   reps: initialReps,
   distance: initialDistance,
   time: initialTime,
+  note: initialNote,
   setNumber,
   onSave,
   onDelete,
@@ -55,6 +58,7 @@ export default function EditSetModal({
   const [reps, setReps] = useState<number>(initialReps);
   const [distance, setDistance] = useState<number>(initialDistance);
   const [time, setTime] = useState<number>(initialTime);
+  const [note, setNote] = useState<string>(initialNote || "");
   const [weightInputVisible, setWeightInputVisible] = useState(false);
   const [repsInputVisible, setRepsInputVisible] = useState(false);
   const [distanceInputVisible, setDistanceInputVisible] = useState(false);
@@ -69,12 +73,13 @@ export default function EditSetModal({
       setReps(initialReps);
       setDistance(initialDistance);
       setTime(initialTime);
+      setNote(initialNote || "");
       setWeightInputVisible(false);
       setRepsInputVisible(false);
       setDistanceInputVisible(false);
       setTimeInputVisible(false);
     }
-  }, [visible, initialWeight, initialReps, initialDistance, initialTime]);
+  }, [visible, initialWeight, initialReps, initialDistance, initialTime, initialNote]);
 
   const handleSave = () => {
     if (!validateSet(exerciseType, { weight, reps, distance, time })) {
@@ -87,11 +92,13 @@ export default function EditSetModal({
       reps?: number;
       distance?: number;
       time?: number;
+      note?: string;
     } = {};
     if (fields.weight) updates.weight = weight;
     if (fields.reps) updates.reps = reps;
     if (fields.distance) updates.distance = distance;
     if (fields.time) updates.time = time;
+    if (note.trim()) updates.note = note.trim();
 
     onSave(updates);
     handleClose();
@@ -118,6 +125,7 @@ export default function EditSetModal({
     setReps(initialReps);
     setDistance(initialDistance);
     setTime(initialTime);
+    setNote(initialNote || "");
     setWeightInputVisible(false);
     setRepsInputVisible(false);
     setDistanceInputVisible(false);
@@ -404,6 +412,25 @@ export default function EditSetModal({
             </View>
           )}
 
+          {/* Note Input Section */}
+          <View style={styles.noteSection}>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Note (optional)
+            </Text>
+            <TextInput
+              style={[
+                styles.noteInput,
+                { color: colors.text, backgroundColor: colors.background, borderColor: colors.border },
+              ]}
+              placeholder="Add a note..."
+              placeholderTextColor={colors.textSecondary}
+              value={note}
+              onChangeText={setNote}
+              multiline
+              maxLength={100}
+            />
+          </View>
+
           {/* Buttons */}
           <View style={styles.buttonGroup}>
             <TouchableOpacity
@@ -544,5 +571,18 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+  noteSection: {
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  noteInput: {
+    height: 60,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    textAlignVertical: "top",
   },
 });

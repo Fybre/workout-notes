@@ -6,7 +6,7 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
 // Current schema version - increment when making schema changes
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 // Migration function type
 export type Migration = {
@@ -17,25 +17,23 @@ export type Migration = {
 
 // Migration registry - add new migrations here
 export const migrations: Migration[] = [
-  // Example migration for future schema changes:
-  // {
-  //   version: 2,
-  //   name: "Add user_preferences table",
-  //   up: async (db) => {
-  //     await db.execAsync(`
-  //       CREATE TABLE IF NOT EXISTS user_preferences (
-  //         key TEXT PRIMARY KEY,
-  //         value TEXT NOT NULL
-  //       );
-  //     `);
-  //   },
-  // },
+  {
+    version: 2,
+    name: "Add note column to sets table",
+    up: async (db) => {
+      await db.execAsync(`
+        ALTER TABLE sets ADD COLUMN note TEXT;
+      `);
+    },
+  },
 ];
 
 /**
  * Initialize the schema version tracking table
  */
-export async function initializeSchemaVersion(db: SQLiteDatabase): Promise<void> {
+export async function initializeSchemaVersion(
+  db: SQLiteDatabase,
+): Promise<void> {
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS schema_version (
       id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -55,16 +53,15 @@ export async function initializeSchemaVersion(db: SQLiteDatabase): Promise<void>
       "INSERT INTO schema_version (id, version, updatedAt) VALUES (?, ?, ?)",
       [1, CURRENT_SCHEMA_VERSION, Date.now()],
     );
-    console.log(
-      `[Schema] Initialized schema version to ${CURRENT_SCHEMA_VERSION}`,
-    );
   }
 }
 
 /**
  * Get current schema version from database
  */
-export async function getCurrentSchemaVersion(db: SQLiteDatabase): Promise<number> {
+export async function getCurrentSchemaVersion(
+  db: SQLiteDatabase,
+): Promise<number> {
   try {
     const result = await db.getFirstAsync<{ version: number }>(
       "SELECT version FROM schema_version WHERE id = 1",
@@ -79,7 +76,10 @@ export async function getCurrentSchemaVersion(db: SQLiteDatabase): Promise<numbe
 /**
  * Update schema version in database
  */
-export async function setSchemaVersion(db: SQLiteDatabase, version: number): Promise<void> {
+export async function setSchemaVersion(
+  db: SQLiteDatabase,
+  version: number,
+): Promise<void> {
   await db.runAsync(
     "UPDATE schema_version SET version = ?, updatedAt = ? WHERE id = 1",
     [version, Date.now()],
@@ -94,41 +94,26 @@ export async function runMigrations(db: SQLiteDatabase): Promise<number> {
   const currentVersion = await getCurrentSchemaVersion(db);
 
   if (currentVersion >= CURRENT_SCHEMA_VERSION) {
-    console.log(`[Schema] Database is up to date (version ${currentVersion})`);
+
     return 0;
   }
 
   // Find migrations to run (sorted by version)
   const pendingMigrations = migrations
-    .filter((m) => m.version > currentVersion && m.version <= CURRENT_SCHEMA_VERSION)
+    .filter(
+      (m) => m.version > currentVersion && m.version <= CURRENT_SCHEMA_VERSION,
+    )
     .sort((a, b) => a.version - b.version);
 
-  if (pendingMigrations.length === 0 && currentVersion < CURRENT_SCHEMA_VERSION) {
+  if (
+    pendingMigrations.length === 0 &&
+    currentVersion < CURRENT_SCHEMA_VERSION
+  ) {
     // No migrations defined but version needs to be bumped
     await setSchemaVersion(db, CURRENT_SCHEMA_VERSION);
-    console.log(`[Schema] Bumped schema version to ${CURRENT_SCHEMA_VERSION}`);
+
     return 0;
   }
-
-  for (const migration of pendingMigrations) {
-    console.log(`[Schema] Running migration ${migration.version}: ${migration.name}`);
-
-    try {
-      await db.withTransactionAsync(async () => {
-        await migration.up(db);
-        await setSchemaVersion(db, migration.version);
-      });
-
-      console.log(`[Schema] Migration ${migration.version} completed successfully`);
-    } catch (error) {
-      console.error(`[Schema] Migration ${migration.version} failed:`, error);
-      throw new Error(
-        `Migration ${migration.version} (${migration.name}) failed: ${error}`,
-      );
-    }
-  }
-
-  return pendingMigrations.length;
 }
 
 /**
