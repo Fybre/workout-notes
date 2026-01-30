@@ -248,6 +248,14 @@ export async function deleteExerciseDefinition(id: string) {
   );
 }
 
+export async function getExerciseDefinitionCount(): Promise<number> {
+  const db = getDatabase();
+  const result = await db.getFirstAsync<{ count: number }>(
+    "SELECT COUNT(*) as count FROM exercise_definitions"
+  );
+  return result?.count ?? 0;
+}
+
 export async function getAllExerciseDefinitions(): Promise<
   {
     id: string;

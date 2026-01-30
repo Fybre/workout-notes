@@ -1680,13 +1680,6 @@
     "description": "Start in plank, step right foot outside right hand. Rotate torso opening right arm toward ceiling. Return hand to floor and step back to plank. Repeat on other side. Full-body dynamic stretch."
   },
   {
-    "name": "Deadlifts",
-    "category": "Full Body",
-    "type": "weight_reps",
-    "unit": "kg",
-    "description": "Stand with feet hip-width, bar over mid-foot. Hinge at hips and grip bar just outside legs. Keep back flat, chest up. Push floor away, extending hips forward to lockout. Hinge at hips to lower bar with control."
-  },
-  {
     "name": "Squats",
     "category": "Full Body",
     "type": "weight_reps",
@@ -1699,13 +1692,6 @@
     "type": "weight_reps",
     "unit": "kg",
     "description": "Lie flat on bench with feet planted firmly on the floor. Grip the bar slightly wider than shoulder-width, retract your shoulder blades, and press the bar up until arms are fully extended. Lower with control to mid-chest."
-  },
-  {
-    "name": "Overhead Press",
-    "category": "Full Body",
-    "type": "weight_reps",
-    "unit": "kg",
-    "description": "Stand with bar at upper chest, grip slightly wider than shoulders. Brace core and press bar overhead until arms lock out. Lower with control to starting position, keeping bar close to face."
   },
   {
     "name": "Power Cleans",
@@ -1743,20 +1729,6 @@
     "description": "Lie on back holding weight overhead with one arm. Progressively stand up through multiple positions while keeping weight locked out. Then reverse back to floor. Ultimate full-body stability exercise."
   },
   {
-    "name": "Medicine Ball Slams",
-    "category": "Full Body",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Hold medicine ball overhead with arms extended. Explosively slam ball down in front of feet using entire body. Catch ball on bounce or pick up and repeat. Full-body power exercise."
-  },
-  {
-    "name": "Battle Ropes",
-    "category": "Full Body",
-    "type": "time_duration",
-    "unit": "minutes",
-    "description": "Hold rope ends with arms extended. Create waves by rapidly moving arms up and down. Vary patterns: alternating, double waves, or circles. Intense upper body and cardio workout."
-  },
-  {
     "name": "Farmer's Walk",
     "category": "Full Body",
     "type": "weight_reps",
@@ -1769,34 +1741,6 @@
     "type": "weight_reps",
     "unit": "kg",
     "description": "Clean sandbag to shoulders, then press overhead. Can be done from floor or rack position. Unstable load challenges core and grip strength throughout movement."
-  },
-  {
-    "name": "Plyometric Push-ups",
-    "category": "Full Body",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Perform push-up explosively, pushing hands off floor at top. Land softly and immediately go into next rep. Builds explosive power and fast-twitch muscle fibers."
-  },
-  {
-    "name": "Burpees",
-    "category": "Full Body",
-    "type": "reps_time",
-    "unit": "minutes",
-    "description": "Drop to floor into plank, perform push-up, jump feet in, explosively jump up reaching overhead. High-intensity full-body exercise. Modify by eliminating push-up or jump if needed."
-  },
-  {
-    "name": "Box Jumps",
-    "category": "Full Body",
-    "type": "reps_time",
-    "unit": "minutes",
-    "description": "Stand facing plyo box. Drop into quarter squat, then explosively jump onto box landing softly with both feet. Stand fully, then step back down. Develops explosive power."
-  },
-  {
-    "name": "Kettlebell Swings",
-    "category": "Full Body",
-    "type": "reps_time",
-    "unit": "minutes",
-    "description": "Stand with feet wide, kettlebell between legs. Hinge at hips and swing kettlebell up to chest height using hip snap. Let bell fall back between legs and repeat. Explosive hip power."
   },
   {
     "name": "Medicine Ball Rotational Throws",
@@ -1846,13 +1790,6 @@
     "type": "time_duration",
     "unit": "minutes",
     "description": "Hold rope ends and create continuous waves by moving arms up and down alternately. Keep core tight and maintain steady rhythm. Intense full-body conditioning exercise."
-  },
-  {
-    "name": "Medicine Ball Chest Pass",
-    "category": "Full Body",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Hold medicine ball at chest level, elbows bent. Explosively push ball forward from chest, either to partner or against wall. Catch rebound and immediately repeat. Focus on explosive power."
   },
   {
     "name": "Plyometric Lunges",
@@ -2107,34 +2044,6 @@
     "description": "Extend arms and rotate wrists in circles, both directions. Can also do wrist flexion/extension stretches. Improves wrist mobility for pushing exercises."
   },
   {
-    "name": "Shoulder Dislocates",
-    "category": "Mobility",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Hold band or broomstick with wide grip. Slowly rotate arms overhead and behind back, then return forward. Keep arms straight throughout. Great warm-up for shoulder mobility."
-  },
-  {
-    "name": "World's Greatest Stretch",
-    "category": "Mobility",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Start in plank, step right foot outside right hand. Rotate torso opening right arm toward ceiling. Return hand to floor and step back to plank. Repeat on other side. Full-body dynamic stretch."
-  },
-  {
-    "name": "Cat-Cow Stretch",
-    "category": "Mobility",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Start on hands and knees. Arch back up like angry cat tucking chin and tailbone. Then drop belly down lifting head and tailbone. Flow smoothly between positions warming up spine."
-  },
-  {
-    "name": "Thoracic Rotation",
-    "category": "Mobility",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Start on hands and knees. Place one hand behind head. Rotate upper body opening elbow toward ceiling. Follow elbow with eyes. Return and repeat. Then switch sides. Mobilizes mid-back."
-  },
-  {
     "name": "90/90 Hip Rotation",
     "category": "Mobility",
     "type": "reps",
@@ -2154,20 +2063,6 @@
     "type": "reps",
     "unit": "reps",
     "description": "From plank position, step one foot outside hand into deep lunge. Rotate torso opening opposite arm toward ceiling. Return to plank and repeat on other side. Dynamic hip mobility exercise."
-  },
-  {
-    "name": "Dynamic Leg Swings",
-    "category": "Mobility",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Hold support and swing one leg forward and back, then side to side. Keep movement controlled and increase range gradually. Warms up hip joints and leg muscles. Do both legs."
-  },
-  {
-    "name": "Arm Circles",
-    "category": "Mobility",
-    "type": "reps",
-    "unit": "reps",
-    "description": "Stand with arms extended to sides. Make small circles gradually increasing size. Do forward circles, then reverse. Warms up shoulder joints and improves mobility. Keep movements controlled."
   },
   {
     "name": "Hip Flexor Dynamic Stretch",

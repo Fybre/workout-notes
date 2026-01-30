@@ -651,9 +651,31 @@ export default function SettingsModal() {
               style={[styles.settingItem, { borderBottomColor: colors.border }]}
               onPress={() => router.push("/manage-exercises")}
             >
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Manage Exercises
+              <View>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>
+                  Manage Exercises
+                </Text>
+                <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
+                  Edit, delete, or categorize your exercises
+                </Text>
+              </View>
+              <Text style={[styles.settingValue, { color: colors.tint }]}>
+                →
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.settingItem, { borderBottomColor: colors.border }]}
+              onPress={() => router.push("/import-exercises")}
+            >
+              <View>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>
+                  Import Exercise Library
+                </Text>
+                <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
+                  Load exercise sets from GitHub (merge or replace)
+                </Text>
+              </View>
               <Text style={[styles.settingValue, { color: colors.tint }]}>
                 →
               </Text>
