@@ -1,17 +1,17 @@
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator,
 } from "react-native";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 // Voice recognition - gracefully handle if module isn't available
 let ExpoSpeechRecognitionModule: any;
@@ -32,6 +32,7 @@ import RestTimerModal from "@/components/RestTimerModal";
 import { Text, View } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
+import { useUnits } from "@/contexts/UnitContext";
 import {
   addExerciseDefinition,
   addExerciseWithDefinition,
@@ -53,13 +54,8 @@ import {
   validateSet,
 } from "@/utils/format";
 import { generateId } from "@/utils/id";
-import { useUnits } from "@/contexts/UnitContext";
-import {
-  kgToLbs,
-  lbsToKg,
-  formatWeight,
-} from "@/utils/units";
 import { isNewPersonalBest } from "@/utils/pb-utils";
+import { kgToLbs, lbsToKg } from "@/utils/units";
 
 const REST_TIMER_SETTINGS_KEY = "@rest_timer_settings";
 
@@ -77,7 +73,7 @@ interface WorkoutSet {
   distance?: number;
   time?: number;
   note?: string;
-  isPersonalBest: boolean;
+  isPersonalBest?: boolean;
 }
 
 export default function EnterWorkoutScreen() {
@@ -167,7 +163,9 @@ export default function EnterWorkoutScreen() {
 
   // Voice recognition state
   const [isListening, setIsListening] = useState(false);
-  const [voicePreviewSet, setVoicePreviewSet] = useState<WorkoutSet | null>(null);
+  const [voicePreviewSet, setVoicePreviewSet] = useState<WorkoutSet | null>(
+    null,
+  );
   const [showVoicePreview, setShowVoicePreview] = useState(false);
 
   // Populate input values based on history
@@ -217,9 +215,7 @@ export default function EnterWorkoutScreen() {
         if (saved) {
           setRestTimerSettings(JSON.parse(saved));
         }
-      } catch (error) {
-
-      }
+      } catch (error) {}
     };
 
     loadRestTimerSettings();
@@ -229,7 +225,8 @@ export default function EnterWorkoutScreen() {
   useEffect(() => {
     const fetchPersonalBest = async () => {
       if (exerciseName) {
-        const pb = await getPersonalBestForExercise(exerciseName, today);
+        // Don't exclude today - we want to show the overall PB including today's sets
+        const pb = await getPersonalBestForExercise(exerciseName);
         setPersonalBest(pb);
       }
     };
@@ -247,7 +244,12 @@ export default function EnterWorkoutScreen() {
 
   const handleAddSet = async () => {
     // Validate based on exercise type
-    const isValid = validateSet(exerciseType, { weight: weightKg, reps, distance, time });
+    const isValid = validateSet(exerciseType, {
+      weight: weightKg,
+      reps,
+      distance,
+      time,
+    });
 
     if (!isValid) {
       Alert.alert(
@@ -345,7 +347,11 @@ export default function EnterWorkoutScreen() {
     // If this is a new PB, clear the PB flag from all previous sets in this session
     // so only the current best shows the badge
     if (isPB) {
-      setSets(sets.map(s => ({ ...s, isPersonalBest: false })).concat(newSet));
+      setSets(
+        sets
+          .map((s) => ({ ...s, isPersonalBest: false }) as WorkoutSet)
+          .concat(newSet),
+      );
     } else {
       setSets([...sets, newSet]);
     }
@@ -370,18 +376,14 @@ export default function EnterWorkoutScreen() {
         await Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success,
         );
-      } catch (error) {
-
-      }
+      } catch (error) {}
     } else {
       // Regular haptic for normal set
       try {
         await Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success,
         );
-      } catch (error) {
-
-      }
+      } catch (error) {}
     }
 
     // Auto-start rest timer if enabled
@@ -461,32 +463,34 @@ export default function EnterWorkoutScreen() {
   // - "220 times 10" → weight: 220, reps: 10
   // - "220 x 10" → weight: 220, reps: 10
   // - "220 by 10 with notes felt easy" → weight: 220, reps: 10, note: "felt easy"
-  const parseVoiceInput = (text: string): { weight?: number; reps?: number; note?: string } => {
+  const parseVoiceInput = (
+    text: string,
+  ): { weight?: number; reps?: number; note?: string } => {
     const result: { weight?: number; reps?: number; note?: string } = {};
     const lowerText = text.toLowerCase();
-    
+
     // Extract note - look for "with notes" or "note" followed by text
     const notePatterns = [
       /with notes?\s+(.+)$/i,
       /note[:,]?\s+(.+)$/i,
       /notes?[:,]?\s+(.+)$/i,
     ];
-    
+
     let remainingText = text;
     for (const pattern of notePatterns) {
       const match = text.match(pattern);
       if (match) {
         result.note = match[1].trim();
-        remainingText = text.replace(match[0], '').trim();
+        remainingText = text.replace(match[0], "").trim();
         break;
       }
     }
-    
+
     // Extract weight and reps
     // Pattern: number [by/for/times/x] number
     const weightRepPattern = /(\d+(?:\.\d+)?)\s*(?:by|for|times|x)\s*(\d+)/i;
     const weightRepMatch = remainingText.match(weightRepPattern);
-    
+
     if (weightRepMatch) {
       result.weight = parseFloat(weightRepMatch[1]);
       result.reps = parseInt(weightRepMatch[2], 10);
@@ -505,7 +509,7 @@ export default function EnterWorkoutScreen() {
         }
       }
     }
-    
+
     return result;
   };
 
@@ -513,13 +517,13 @@ export default function EnterWorkoutScreen() {
   if (voiceRecognitionAvailable && useSpeechRecognitionEvent) {
     useSpeechRecognitionEvent("result", (event: any) => {
       setIsListening(false);
-      
+
       if (event.results && event.results.length > 0) {
         const transcript = event.results[0].transcript;
-        
+
         if (transcript) {
           const parsed = parseVoiceInput(transcript);
-          
+
           // Create preview set
           const preview: WorkoutSet = {
             id: generateId(),
@@ -528,7 +532,7 @@ export default function EnterWorkoutScreen() {
             note: parsed.note,
             isPersonalBest: false,
           };
-          
+
           setVoicePreviewSet(preview);
           setShowVoicePreview(true);
         }
@@ -546,24 +550,25 @@ export default function EnterWorkoutScreen() {
     if (!voiceRecognitionAvailable || !ExpoSpeechRecognitionModule) {
       Alert.alert(
         "Voice Recognition Unavailable",
-        "Voice recognition requires a development build. It is not available in Expo Go."
+        "Voice recognition requires a development build. It is not available in Expo Go.",
       );
       return;
     }
-    
+
     try {
       // Check permissions
-      const { status } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      const { status } =
+        await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Please grant microphone and speech recognition permissions to use voice logging."
+          "Please grant microphone and speech recognition permissions to use voice logging.",
         );
         return;
       }
 
       setIsListening(true);
-      
+
       // Haptic feedback to indicate start
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -581,7 +586,10 @@ export default function EnterWorkoutScreen() {
     } catch (error) {
       setIsListening(false);
 
-      Alert.alert("Error", "Voice recognition is not available on this device.");
+      Alert.alert(
+        "Error",
+        "Voice recognition is not available on this device.",
+      );
     }
   };
 
@@ -649,15 +657,18 @@ export default function EnterWorkoutScreen() {
 
     // Create the set from voice preview values
     // Convert weight from user units to kg if needed
-    const weightKg = voicePreviewSet.weight !== undefined && weightUnit === "lbs"
-      ? lbsToKg(voicePreviewSet.weight)
-      : voicePreviewSet.weight;
+    const weightKg =
+      voicePreviewSet.weight !== undefined && weightUnit === "lbs"
+        ? lbsToKg(voicePreviewSet.weight)
+        : voicePreviewSet.weight;
 
     const newSet: WorkoutSet = {
       id: generateId(),
       weight: exerciseType.includes("weight") ? weightKg : undefined,
       reps: exerciseType.includes("reps") ? voicePreviewSet.reps : undefined,
-      distance: exerciseType.includes("distance") ? voicePreviewSet.distance : undefined,
+      distance: exerciseType.includes("distance")
+        ? voicePreviewSet.distance
+        : undefined,
       time: exerciseType.includes("time") ? voicePreviewSet.time : undefined,
       note: voicePreviewSet.note,
       isPersonalBest: false,
@@ -689,7 +700,11 @@ export default function EnterWorkoutScreen() {
 
     // Update sets state
     if (isPB) {
-      setSets(sets.map(s => ({ ...s, isPersonalBest: false })).concat(newSet));
+      setSets(
+        sets
+          .map((s) => ({ ...s, isPersonalBest: false }) as WorkoutSet)
+          .concat(newSet),
+      );
     } else {
       setSets([...sets, newSet]);
     }
@@ -761,7 +776,12 @@ export default function EnterWorkoutScreen() {
   const fields = getExerciseTypeFields(exerciseType);
 
   // Check if Add Set button should be enabled
-  const canAddSet = validateSet(exerciseType, { weight: weightKg, reps, distance, time });
+  const canAddSet = validateSet(exerciseType, {
+    weight: weightKg,
+    reps,
+    distance,
+    time,
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -808,8 +828,14 @@ export default function EnterWorkoutScreen() {
                     for (const entry of history) {
                       for (const set of entry.sets) {
                         if (set.weight && set.reps) {
-                          const oneRM = calculateOneRepMax(set.weight, set.reps);
-                          if (oneRM && (bestOneRM === null || oneRM > bestOneRM)) {
+                          const oneRM = calculateOneRepMax(
+                            set.weight,
+                            set.reps,
+                          );
+                          if (
+                            oneRM &&
+                            (bestOneRM === null || oneRM > bestOneRM)
+                          ) {
                             bestOneRM = oneRM;
                           }
                         }
@@ -825,7 +851,11 @@ export default function EnterWorkoutScreen() {
               style={styles.infoButton}
               activeOpacity={0.7}
             >
-              <FontAwesome name="question-circle-o" size={24} color={colors.tint} />
+              <FontAwesome
+                name="question-circle-o"
+                size={24}
+                color={colors.tint}
+              />
             </TouchableOpacity>
           )}
           <TouchableOpacity
@@ -863,7 +893,11 @@ export default function EnterWorkoutScreen() {
             ]}
           >
             <Text style={[styles.pbText, { color: colors.textSecondary }]}>
-              🏆 PB: {formatSetForDisplay(exerciseType, personalBest, { weightUnit, distanceUnit })}
+              🏆 PB:{" "}
+              {formatSetForDisplay(exerciseType, personalBest, {
+                weightUnit,
+                distanceUnit,
+              })}
             </Text>
             {showCelebration && (
               <Text style={[styles.pbNewLabel, { color: colors.success }]}>
@@ -888,9 +922,15 @@ export default function EnterWorkoutScreen() {
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
                     onPress={() => {
-                      const currentDisplay = weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
-                      const newDisplay = Math.max(0, currentDisplay - weightIncrement);
-                      setWeightKg(weightUnit === "lbs" ? lbsToKg(newDisplay) : newDisplay);
+                      const currentDisplay =
+                        weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
+                      const newDisplay = Math.max(
+                        0,
+                        currentDisplay - weightIncrement,
+                      );
+                      setWeightKg(
+                        weightUnit === "lbs" ? lbsToKg(newDisplay) : newDisplay,
+                      );
                     }}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
@@ -906,7 +946,10 @@ export default function EnterWorkoutScreen() {
                       ]}
                       keyboardType="decimal-pad"
                       placeholder="Weight"
-                      value={(weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg).toString()}
+                      value={(weightUnit === "lbs"
+                        ? kgToLbs(weightKg)
+                        : weightKg
+                      ).toString()}
                       onChangeText={handleWeightChange}
                       onBlur={() => setWeightInputVisible(false)}
                       autoFocus
@@ -919,7 +962,12 @@ export default function EnterWorkoutScreen() {
                       activeOpacity={0.7}
                     >
                       <Text style={[styles.numberText, { color: colors.text }]}>
-                        {weightKg === 0 ? "—" : (weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg).toFixed(weightUnit === "lbs" ? 1 : 1)}
+                        {weightKg === 0
+                          ? "—"
+                          : (weightUnit === "lbs"
+                              ? kgToLbs(weightKg)
+                              : weightKg
+                            ).toFixed(weightUnit === "lbs" ? 1 : 1)}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -927,9 +975,12 @@ export default function EnterWorkoutScreen() {
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
                     onPress={() => {
-                      const currentDisplay = weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
+                      const currentDisplay =
+                        weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
                       const newDisplay = currentDisplay + weightIncrement;
-                      setWeightKg(weightUnit === "lbs" ? lbsToKg(newDisplay) : newDisplay);
+                      setWeightKg(
+                        weightUnit === "lbs" ? lbsToKg(newDisplay) : newDisplay,
+                      );
                     }}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
@@ -1113,22 +1164,28 @@ export default function EnterWorkoutScreen() {
           <TouchableOpacity
             style={[
               styles.noteButton,
-              { 
-                backgroundColor: currentNote ? `${colors.tint}30` : colors.surface,
+              {
+                backgroundColor: currentNote
+                  ? `${colors.tint}30`
+                  : colors.surface,
                 borderColor: currentNote ? colors.tint : colors.border,
               },
             ]}
             onPress={() => setShowNoteModal(true)}
             activeOpacity={0.7}
           >
-            <FontAwesome 
-              name={currentNote ? "sticky-note" : "sticky-note-o"} 
-              size={24} 
+            <FontAwesome
+              name={currentNote ? "sticky-note" : "sticky-note-o"}
+              size={24}
               color={currentNote ? colors.tint : colors.textSecondary}
             />
-            {currentNote && <View style={[styles.noteIndicator, { backgroundColor: colors.tint }]} />}
+            {currentNote && (
+              <View
+                style={[styles.noteIndicator, { backgroundColor: colors.tint }]}
+              />
+            )}
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[
               styles.addSetButton,
@@ -1146,25 +1203,29 @@ export default function EnterWorkoutScreen() {
               Add Set
             </Text>
           </TouchableOpacity>
-          
+
           {voiceRecognitionAvailable && (
             <TouchableOpacity
               style={[
                 styles.voiceButton,
-                { 
-                  backgroundColor: isListening ? `${colors.tint}30` : colors.surface,
+                {
+                  backgroundColor: isListening
+                    ? `${colors.tint}30`
+                    : colors.surface,
                   borderColor: isListening ? colors.tint : colors.border,
                 },
               ]}
-              onPress={isListening ? stopVoiceRecognition : startVoiceRecognition}
+              onPress={
+                isListening ? stopVoiceRecognition : startVoiceRecognition
+              }
               activeOpacity={0.7}
             >
               {isListening ? (
                 <ActivityIndicator size="small" color={colors.tint} />
               ) : (
-                <FontAwesome 
-                  name="microphone" 
-                  size={24} 
+                <FontAwesome
+                  name="microphone"
+                  size={24}
                   color={colors.textSecondary}
                 />
               )}
@@ -1204,10 +1265,18 @@ export default function EnterWorkoutScreen() {
                 </View>
                 <View style={styles.setDataRow}>
                   <Text style={[styles.setData, { color: colors.text }]}>
-                    {formatSetForDisplay(exerciseType, set, { weightUnit, distanceUnit })}
+                    {formatSetForDisplay(exerciseType, set, {
+                      weightUnit,
+                      distanceUnit,
+                    })}
                   </Text>
                   {set.note && (
-                    <FontAwesome name="sticky-note" size={14} color={colors.tint} style={styles.noteIcon} />
+                    <FontAwesome
+                      name="sticky-note"
+                      size={14}
+                      color={colors.tint}
+                      style={styles.noteIcon}
+                    />
                   )}
                 </View>
               </TouchableOpacity>
@@ -1348,10 +1417,7 @@ export default function EnterWorkoutScreen() {
                   ]}
                 >
                   <Text
-                    style={[
-                      styles.oneRMLabel,
-                      { color: colors.textSecondary },
-                    ]}
+                    style={[styles.oneRMLabel, { color: colors.textSecondary }]}
                   >
                     Estimated 1 Rep Max
                   </Text>
@@ -1418,7 +1484,10 @@ export default function EnterWorkoutScreen() {
                                 { color: colors.text },
                               ]}
                             >
-                              {formatSetForDisplay(exerciseType, set, { weightUnit, distanceUnit })}
+                              {formatSetForDisplay(exerciseType, set, {
+                                weightUnit,
+                                distanceUnit,
+                              })}
                             </Text>
                           </View>
                         ))}
@@ -1445,7 +1514,10 @@ export default function EnterWorkoutScreen() {
           onPress={() => setShowNoteModal(false)}
         >
           <View
-            style={[styles.noteModalContent, { backgroundColor: colors.surface }]}
+            style={[
+              styles.noteModalContent,
+              { backgroundColor: colors.surface },
+            ]}
             onStartShouldSetResponder={() => true}
           >
             <Text style={[styles.noteModalTitle, { color: colors.text }]}>
@@ -1454,7 +1526,11 @@ export default function EnterWorkoutScreen() {
             <TextInput
               style={[
                 styles.noteModalInput,
-                { color: colors.text, backgroundColor: colors.background, borderColor: colors.border },
+                {
+                  color: colors.text,
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
               ]}
               placeholder="Enter a note for this set..."
               placeholderTextColor={colors.textSecondary}
@@ -1466,21 +1542,31 @@ export default function EnterWorkoutScreen() {
             />
             <View style={styles.noteModalButtons}>
               <TouchableOpacity
-                style={[styles.noteModalButton, { backgroundColor: colors.border }]}
+                style={[
+                  styles.noteModalButton,
+                  { backgroundColor: colors.border },
+                ]}
                 onPress={() => {
                   setCurrentNote("");
                   setShowNoteModal(false);
                 }}
               >
-                <Text style={[styles.noteModalButtonText, { color: colors.text }]}>
+                <Text
+                  style={[styles.noteModalButtonText, { color: colors.text }]}
+                >
                   Clear
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.noteModalButton, { backgroundColor: colors.tint }]}
+                style={[
+                  styles.noteModalButton,
+                  { backgroundColor: colors.tint },
+                ]}
                 onPress={() => setShowNoteModal(false)}
               >
-                <Text style={[styles.noteModalButtonText, { color: "#ffffff" }]}>
+                <Text
+                  style={[styles.noteModalButtonText, { color: "#ffffff" }]}
+                >
                   Done
                 </Text>
               </TouchableOpacity>
@@ -1497,11 +1583,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pbContainer: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 8,
     alignItems: "center",
   },
   pbContainerNew: {
@@ -1559,7 +1645,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingTop: 10,
   },
   inputSection: {
     marginBottom: 16,
@@ -1657,7 +1743,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   setRow: {
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 8,
@@ -1673,19 +1759,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    backgroundColor: "transparent",
   },
   setNumber: {
     fontSize: 14,
     fontWeight: "600",
-    opacity: 0.5,
+    opacity: 0.9,
+    backgroundColor: "transparent",
   },
   pbBadge: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "700",
   },
   setData: {
     fontSize: 18,
     fontWeight: "600",
+    backgroundColor: "transparent",
   },
   // Info Modal Styles
   infoModalOverlay: {
@@ -1798,6 +1887,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    backgroundColor: "transparent",
   },
   noteIcon: {
     marginLeft: 4,

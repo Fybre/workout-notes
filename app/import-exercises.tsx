@@ -3,7 +3,6 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -119,13 +118,10 @@ export default function ImportExercisesScreen() {
       }
 
       const file = result.assets[0];
-      console.log(`[Import] Selected file: ${file.name}`);
 
       // Read file content
       const response = await fetch(file.uri);
       const fileContent = await response.text();
-      
-      console.log(`[Import] File size: ${fileContent.length} chars`);
 
       // Parse JSON
       let exercises: ExerciseDefinition[];
@@ -192,22 +188,13 @@ export default function ImportExercisesScreen() {
     setSelectedSet(setInfo);
 
     try {
-      console.log(`[Import] Fetching from: ${setInfo.url}`);
-      
       const response = await fetchWithTimeout(setInfo.url, 30000);
-      
-      console.log(`[Import] Response status: ${response.status}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const contentType = response.headers.get('content-type');
-      console.log(`[Import] Content-Type: ${contentType}`);
-
       const responseText = await response.text();
-      console.log(`[Import] Response length: ${responseText.length} chars`);
-      console.log(`[Import] First 200 chars: ${responseText.substring(0, 200)}`);
 
       let newExercises: ExerciseDefinition[];
       try {
@@ -216,8 +203,6 @@ export default function ImportExercisesScreen() {
         console.error('[Import] JSON parse error:', parseError);
         throw new Error(`Invalid JSON: ${parseError instanceof Error ? parseError.message : 'Unknown parse error'}`);
       }
-
-      console.log(`[Import] Parsed ${newExercises.length} exercises`);
 
       if (!Array.isArray(newExercises)) {
         throw new Error('Response is not an array');
@@ -238,9 +223,7 @@ export default function ImportExercisesScreen() {
 
       // Get current exercises for comparison
       // Note: Database has UNIQUE constraint on 'name' only, not name+category
-      console.log('[Import] Getting current exercise definitions...');
       const currentExercises = await getAllExerciseDefinitions();
-      console.log(`[Import] Found ${currentExercises.length} existing exercises`);
       
       // Create a set of existing exercise names (lowercase for case-insensitive comparison)
       const existingNames = new Set(
@@ -261,8 +244,6 @@ export default function ImportExercisesScreen() {
           existingNames.add(normalizedName);
         }
       }
-
-      console.log(`[Import] Preview: ${toAdd.length} new, ${existing.length} existing`);
 
       setPreview({
         toAdd,
@@ -309,35 +290,27 @@ export default function ImportExercisesScreen() {
     if ((!selectedSet && !manualFile) || !preview) return;
 
     setImporting(true);
-    console.log(`[Import] Starting ${importMode} import...`);
 
     try {
       if (importMode === "replace") {
         // Replace mode: Clear all exercise-related data and re-add
         const db = getDatabase();
         
-        console.log('[Import] Replace mode - clearing existing data...');
-        
         // Due to foreign key constraints, we need to delete in order:
         // 1. Delete all sets (references exercises)
         // 2. Delete all exercises (references exercise_definitions)
         // 3. Delete all exercise definitions
         await db.withTransactionAsync(async () => {
-          console.log('[Import] Deleting sets...');
           await db.runAsync("DELETE FROM sets");
-          console.log('[Import] Deleting exercises...');
           await db.runAsync("DELETE FROM exercises");
-          console.log('[Import] Deleting exercise definitions...');
           await db.runAsync("DELETE FROM exercise_definitions");
         });
 
         // Get exercises for replace mode (from URL or manual file)
         let exercises: ExerciseDefinition[];
         if (manualFile) {
-          console.log('[Import] Using manual file exercises for replace mode...');
           exercises = manualFile.exercises;
         } else if (selectedSet) {
-          console.log('[Import] Fetching exercises for replace mode...');
           const response = await fetchWithTimeout(selectedSet.url, 30000);
           if (!response.ok) {
             throw new Error(`Failed to fetch: ${response.status}`);
@@ -351,24 +324,14 @@ export default function ImportExercisesScreen() {
         // Deduplicate exercises by name (keep first occurrence)
         const uniqueExercises: ExerciseDefinition[] = [];
         const seenNames = new Set<string>();
-        let duplicatesSkipped = 0;
         
         for (const ex of exercises) {
           const normalizedName = ex.name.toLowerCase().trim();
-          if (seenNames.has(normalizedName)) {
-            duplicatesSkipped++;
-            console.log(`[Import] Skipping duplicate: "${ex.name}"`);
-          } else {
+          if (!seenNames.has(normalizedName)) {
             seenNames.add(normalizedName);
             uniqueExercises.push(ex);
           }
         }
-        
-        if (duplicatesSkipped > 0) {
-          console.log(`[Import] Skipped ${duplicatesSkipped} duplicates, importing ${uniqueExercises.length} unique exercises`);
-        }
-        
-        console.log(`[Import] Adding ${uniqueExercises.length} exercises...`);
 
         let addedCount = 0;
         for (const ex of uniqueExercises) {
@@ -387,10 +350,8 @@ export default function ImportExercisesScreen() {
             throw new Error(`Failed to add "${ex.name}": ${addError instanceof Error ? addError.message : 'Unknown error'}`);
           }
         }
-        console.log(`[Import] Successfully added ${addedCount} exercises`);
       } else {
         // Merge mode: Only add new exercises
-        console.log(`[Import] Merge mode - adding ${preview.toAdd.length} new exercises...`);
         let addedCount = 0;
         let failedCount = 0;
         const failedNames: string[] = [];
@@ -413,7 +374,6 @@ export default function ImportExercisesScreen() {
             // Continue with next exercise instead of failing completely
           }
         }
-        console.log(`[Import] Added ${addedCount}, failed ${failedCount}`);
         
         // Show result alert even if some failed
         if (failedCount > 0) {
@@ -555,29 +515,6 @@ export default function ImportExercisesScreen() {
               </View>
             )}
 
-            {/* Troubleshooting Section */}
-            <View style={styles.troubleshootingSection}>
-              <Text style={[styles.troubleshootingTitle, { color: colors.textSecondary }]}>
-                Having trouble?
-              </Text>
-              <Text style={[styles.troubleshootingText, { color: colors.textSecondary }]}
-              numberOfLines={0}
-              >
-                If downloads fail, you can manually download the JSON files from the GitHub repository and import them here later.
-              </Text>
-              <TouchableOpacity
-                onPress={() => Linking.openURL('https://github.com/Fybre/workout-notes/tree/main/exercise_data')}
-                activeOpacity={0.7}
-              >
-                <Text 
-                  style={[styles.urlText, { color: colors.tint }]} 
-                  numberOfLines={2} 
-                  ellipsizeMode="tail"
-                >
-                  github.com/Fybre/workout-notes/tree/main/exercise_data
-                </Text>
-              </TouchableOpacity>
-            </View>
           </>
         ) : (
           // Preview and Import Options
@@ -1054,25 +991,5 @@ const styles = StyleSheet.create({
   manualImportButtonText: {
     fontSize: 16,
     fontWeight: "600",
-  },
-  troubleshootingSection: {
-    marginTop: 32,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128,128,128,0.2)",
-  },
-  troubleshootingTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
-  troubleshootingText: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-  urlText: {
-    fontSize: 12,
-    fontWeight: "500",
   },
 });
