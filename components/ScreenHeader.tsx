@@ -4,6 +4,7 @@
  */
 
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
@@ -24,9 +25,15 @@ export function ScreenHeader({
 }: ScreenHeaderProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.header, { borderBottomColor: colors.border }]}>
+    <View
+      style={[
+        styles.header,
+        { borderBottomColor: colors.border, paddingTop: insets.top + 10 },
+      ]}
+    >
       <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
         {title}
       </Text>
@@ -70,7 +77,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 24,
     borderBottomWidth: 1,

@@ -1,7 +1,7 @@
-import { Picker } from "@react-native-picker/picker";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   View as RNView,
   ScrollView,
@@ -9,14 +9,23 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
+import { ExerciseMediaPicker } from "@/components/ExerciseMediaPicker";
+import { SelectModal } from "@/components/SelectModal";
 import { Text, View } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
-import { addExerciseDefinition, getUniqueCategories } from "@/db/database";
+import {
+  addExerciseDefinition,
+  getExerciseDefinitionById,
+  getUniqueCategories,
+  updateExerciseDefinition,
+} from "@/db/database";
 import type { ExerciseType } from "@/types/workout";
 import { generateId } from "@/utils/id";
+import { deleteExerciseMediaFile, type ExerciseMedia } from "@/utils/media";
 
 interface ExerciseDefinition {
   id?: string;
@@ -25,12 +34,16 @@ interface ExerciseDefinition {
   type: ExerciseType;
   unit: string;
   description?: string;
+  mediaUri?: string | null;
+  mediaType?: "image" | "video" | null;
 }
 
 export default function AddExerciseDefinitionScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const insets = useSafeAreaInsets();
+  const { id: editId } = useLocalSearchParams<{ id?: string }>();
 
   const [exercise, setExercise] = useState<ExerciseDefinition>({
     name: "",
@@ -38,11 +51,39 @@ export default function AddExerciseDefinitionScreen() {
     type: "weight_reps",
     unit: "kg",
     description: "",
+    mediaUri: null,
+    mediaType: null,
   });
+  // The media URI as currently saved in the DB, used to know which file to
+  // clean up once a replacement is actually saved (or discard a new pick on cancel)
+  const [originalMediaUri, setOriginalMediaUri] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(!!editId);
+
+  const handleMediaChange = (media: ExerciseMedia | null) => {
+    // Clean up a previously picked-but-unsaved file before replacing it
+    if (exercise.mediaUri && exercise.mediaUri !== originalMediaUri) {
+      deleteExerciseMediaFile(exercise.mediaUri);
+    }
+    setExercise((prev) => ({
+      ...prev,
+      mediaUri: media?.uri ?? null,
+      mediaType: media?.type ?? null,
+    }));
+  };
+
+  const handleDiscardAndClose = () => {
+    if (exercise.mediaUri && exercise.mediaUri !== originalMediaUri) {
+      deleteExerciseMediaFile(exercise.mediaUri);
+    }
+    router.back();
+  };
 
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [customCategory, setCustomCategory] = useState("");
+  const [activeSelector, setActiveSelector] = useState<
+    "category" | "type" | "unit" | null
+  >(null);
 
   // Load existing categories on mount
   useEffect(() => {
@@ -50,10 +91,17 @@ export default function AddExerciseDefinitionScreen() {
       try {
         const categories = await getUniqueCategories();
         setExistingCategories(categories);
-        
-        // Set default category if available
-        if (categories.length > 0 && !exercise.category) {
-          setExercise(prev => ({ ...prev, category: categories[0] }));
+
+        // Default to the first category for new exercises only - never for
+        // an exercise being edited (its category comes from loadDefinition
+        // below). Checking prev.category via a functional update (rather
+        // than the `exercise` closed over when this effect was scheduled)
+        // also avoids clobbering a category that loadDefinition sets later,
+        // regardless of which of the two requests resolves first.
+        if (!editId && categories.length > 0) {
+          setExercise((prev) =>
+            prev.category ? prev : { ...prev, category: categories[0] },
+          );
         }
       } catch (error) {
 
@@ -61,7 +109,37 @@ export default function AddExerciseDefinitionScreen() {
     };
 
     loadCategories();
-  }, []);
+  }, [editId]);
+
+  // Load the existing definition when editing
+  useEffect(() => {
+    if (!editId) return;
+
+    const loadDefinition = async () => {
+      try {
+        const definition = await getExerciseDefinitionById(editId);
+        if (definition) {
+          setExercise({
+            id: definition.id,
+            name: definition.name,
+            category: definition.category,
+            type: definition.type as ExerciseType,
+            unit: definition.unit,
+            description: definition.description || "",
+            mediaUri: definition.mediaUri,
+            mediaType: definition.mediaType as "image" | "video" | null,
+          });
+          setOriginalMediaUri(definition.mediaUri);
+        }
+      } catch (error) {
+        Alert.alert("Error", "Failed to load exercise");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDefinition();
+  }, [editId]);
 
   const exerciseTypes: { label: string; value: ExerciseType }[] = [
     { label: "Weight & Reps", value: "weight_reps" },
@@ -92,17 +170,34 @@ export default function AddExerciseDefinitionScreen() {
     }
 
     try {
-      // Save to database
-      await addExerciseDefinition({
-        id: generateId(),
-        name: exercise.name,
-        category: finalCategory,
-        type: exercise.type,
-        unit: exercise.unit,
-        description: exercise.description || undefined,
-      });
+      if (exercise.id) {
+        // Update existing definition
+        await updateExerciseDefinition(exercise.id, {
+          name: exercise.name,
+          category: finalCategory,
+          type: exercise.type,
+          unit: exercise.unit,
+          description: exercise.description || undefined,
+          mediaUri: exercise.mediaUri ?? null,
+          mediaType: exercise.mediaType ?? null,
+        });
+        if (originalMediaUri && originalMediaUri !== exercise.mediaUri) {
+          deleteExerciseMediaFile(originalMediaUri);
+        }
+      } else {
+        // Create new definition
+        await addExerciseDefinition({
+          id: generateId(),
+          name: exercise.name,
+          category: finalCategory,
+          type: exercise.type,
+          unit: exercise.unit,
+          description: exercise.description || undefined,
+          mediaUri: exercise.mediaUri || undefined,
+          mediaType: exercise.mediaType || undefined,
+        });
+      }
 
-      Alert.alert("Success", "Exercise definition saved successfully");
       router.back();
     } catch (error) {
 
@@ -110,21 +205,12 @@ export default function AddExerciseDefinitionScreen() {
     }
   };
 
-  const getUnitsForType = () => {
-    if (
-      exercise.type.includes("weight") &&
-      !exercise.type.includes("distance")
-    ) {
+  const getUnitsForType = (type: ExerciseType = exercise.type) => {
+    if (type.includes("weight") && !type.includes("distance")) {
       return ["kg", "lbs"];
-    } else if (
-      exercise.type.includes("distance") &&
-      !exercise.type.includes("weight")
-    ) {
+    } else if (type.includes("distance") && !type.includes("weight")) {
       return ["km", "miles", "meters", "yards"];
-    } else if (
-      exercise.type.includes("weight") &&
-      exercise.type.includes("distance")
-    ) {
+    } else if (type.includes("weight") && type.includes("distance")) {
       return ["kg", "lbs"];
     } else {
       return ["kg", "lbs", "km", "miles", "meters", "yards"];
@@ -132,12 +218,31 @@ export default function AddExerciseDefinitionScreen() {
   };
 
   const handleCategoryChange = (value: string) => {
+    setActiveSelector(null);
     if (value === "__CUSTOM__") {
       setIsCustomCategory(true);
     } else {
       setIsCustomCategory(false);
-      setExercise({ ...exercise, category: value });
+      setExercise((prev) => ({ ...prev, category: value }));
     }
+  };
+
+  const handleTypeChange = (value: string) => {
+    setActiveSelector(null);
+    const newType = value as ExerciseType;
+    const unitsForNewType = getUnitsForType(newType);
+    setExercise((prev) => ({
+      ...prev,
+      type: newType,
+      unit: unitsForNewType.includes(prev.unit)
+        ? prev.unit
+        : unitsForNewType[0],
+    }));
+  };
+
+  const handleUnitChange = (value: string) => {
+    setActiveSelector(null);
+    setExercise((prev) => ({ ...prev, unit: value }));
   };
 
   return (
@@ -149,13 +254,11 @@ export default function AddExerciseDefinitionScreen() {
           {
             backgroundColor: colors.background,
             borderBottomColor: colors.border,
+            paddingTop: insets.top + 10,
           },
         ]}
       >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.closeButton}
-        >
+        <TouchableOpacity onPress={handleDiscardAndClose} style={styles.closeButton}>
           <Text style={[styles.closeText, { color: colors.tint }]}>✕</Text>
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
@@ -168,6 +271,12 @@ export default function AddExerciseDefinitionScreen() {
         </TouchableOpacity>
       </View>
 
+      {isLoading ? (
+        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+          <ActivityIndicator size="large" color={colors.tint} />
+        </View>
+      ) : (
+      <>
       {/* Form */}
       <ScrollView
         style={[styles.formContainer, { backgroundColor: colors.background }]}
@@ -197,26 +306,29 @@ export default function AddExerciseDefinitionScreen() {
         {/* Category */}
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.text }]}>Category</Text>
-          
-          {/* Category Picker */}
-          <RNView
+
+          <TouchableOpacity
             style={[
-              styles.pickerContainer,
+              styles.selectField,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
+            onPress={() => setActiveSelector("category")}
+            activeOpacity={0.7}
           >
-            <Picker
-              selectedValue={isCustomCategory ? "__CUSTOM__" : exercise.category}
-              onValueChange={handleCategoryChange}
-              style={[styles.picker, { color: colors.text }]}
-              dropdownIconColor={colors.tint}
+            <Text
+              style={[styles.selectFieldText, { color: colors.text }]}
+              numberOfLines={1}
             >
-              {existingCategories.map((category) => (
-                <Picker.Item key={category} label={category} value={category} />
-              ))}
-              <Picker.Item label="+ New Category" value="__CUSTOM__" />
-            </Picker>
-          </RNView>
+              {isCustomCategory
+                ? customCategory || "New Category"
+                : exercise.category || "Select a category"}
+            </Text>
+            <FontAwesome
+              name="chevron-down"
+              size={14}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
 
           {/* Custom Category Input */}
           {isCustomCategory && (
@@ -241,59 +353,52 @@ export default function AddExerciseDefinitionScreen() {
         {/* Exercise Type */}
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.text }]}>Log Type</Text>
-          <RNView
+          <TouchableOpacity
             style={[
-              styles.pickerContainer,
+              styles.selectField,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
+            onPress={() => setActiveSelector("type")}
+            activeOpacity={0.7}
           >
-            <Picker
-              selectedValue={exercise.type}
-              onValueChange={(itemValue: string) =>
-                setExercise({
-                  ...exercise,
-                  type: itemValue as ExerciseType,
-                  unit: getUnitsForType().includes(exercise.unit)
-                    ? exercise.unit
-                    : getUnitsForType()[0],
-                })
-              }
-              style={[styles.picker, { color: colors.text }]}
-              dropdownIconColor={colors.tint}
+            <Text
+              style={[styles.selectFieldText, { color: colors.text }]}
+              numberOfLines={1}
             >
-              {exerciseTypes.map((type) => (
-                <Picker.Item
-                  key={type.value}
-                  label={type.label}
-                  value={type.value}
-                />
-              ))}
-            </Picker>
-          </RNView>
+              {exerciseTypes.find((t) => t.value === exercise.type)?.label ??
+                "Select a log type"}
+            </Text>
+            <FontAwesome
+              name="chevron-down"
+              size={14}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Unit */}
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.text }]}>Unit</Text>
-          <RNView
+          <TouchableOpacity
             style={[
-              styles.pickerContainer,
+              styles.selectField,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
+            onPress={() => setActiveSelector("unit")}
+            activeOpacity={0.7}
           >
-            <Picker
-              selectedValue={exercise.unit}
-              onValueChange={(itemValue: string) =>
-                setExercise({ ...exercise, unit: itemValue })
-              }
-              style={[styles.picker, { color: colors.text }]}
-              dropdownIconColor={colors.tint}
+            <Text
+              style={[styles.selectFieldText, { color: colors.text }]}
+              numberOfLines={1}
             >
-              {getUnitsForType().map((unit) => (
-                <Picker.Item key={unit} label={unit} value={unit} />
-              ))}
-            </Picker>
-          </RNView>
+              {exercise.unit || "Select a unit"}
+            </Text>
+            <FontAwesome
+              name="chevron-down"
+              size={14}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Description */}
@@ -325,7 +430,57 @@ export default function AddExerciseDefinitionScreen() {
             />
           </RNView>
         </View>
+
+        {/* Photo / Video */}
+        <View style={styles.inputGroup}>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Photo / Video (Optional)
+          </Text>
+          <ExerciseMediaPicker
+            mediaUri={exercise.mediaUri ?? null}
+            mediaType={exercise.mediaType ?? null}
+            onChange={handleMediaChange}
+          />
+        </View>
       </ScrollView>
+
+      <SelectModal
+        visible={activeSelector === "category"}
+        title="Category"
+        options={[
+          ...existingCategories.map((category) => ({
+            label: category,
+            value: category,
+          })),
+          { label: "+ New Category", value: "__CUSTOM__" },
+        ]}
+        selectedValue={isCustomCategory ? "__CUSTOM__" : exercise.category}
+        onSelect={handleCategoryChange}
+        onClose={() => setActiveSelector(null)}
+      />
+
+      <SelectModal
+        visible={activeSelector === "type"}
+        title="Log Type"
+        options={exerciseTypes}
+        selectedValue={exercise.type}
+        onSelect={handleTypeChange}
+        onClose={() => setActiveSelector(null)}
+      />
+
+      <SelectModal
+        visible={activeSelector === "unit"}
+        title="Unit"
+        options={getUnitsForType().map((unit) => ({
+          label: unit,
+          value: unit,
+        }))}
+        selectedValue={exercise.unit}
+        onSelect={handleUnitChange}
+        onClose={() => setActiveSelector(null)}
+      />
+      </>
+      )}
     </View>
   );
 }
@@ -338,10 +493,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 22,
@@ -406,10 +565,14 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
     paddingVertical: 14,
   },
-  pickerContainer: {
+  selectField: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: 56,
     borderWidth: 1,
     borderRadius: 12,
-    overflow: "hidden",
+    paddingHorizontal: 16,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -419,8 +582,9 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  picker: {
-    height: 56,
-    width: "100%",
+  selectFieldText: {
+    fontSize: 16,
+    flex: 1,
+    marginRight: 8,
   },
 });

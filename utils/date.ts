@@ -78,6 +78,31 @@ export function formatDisplayDate(dateStr: string): string {
 }
 
 /**
+ * Check if a date string represents yesterday.
+ */
+export function isYesterday(dateStr: string): boolean {
+  return dateStr === addDays(getToday(), -1);
+}
+
+/**
+ * Check if a date string represents tomorrow.
+ */
+export function isTomorrow(dateStr: string): boolean {
+  return dateStr === addDays(getToday(), 1);
+}
+
+/**
+ * Format a date string for display in the UI, using relative labels for
+ * yesterday/today/tomorrow and falling back to formatDisplayDate otherwise.
+ */
+export function formatRelativeDate(dateStr: string): string {
+  if (isToday(dateStr)) return "Today";
+  if (isYesterday(dateStr)) return "Yesterday";
+  if (isTomorrow(dateStr)) return "Tomorrow";
+  return formatDisplayDate(dateStr);
+}
+
+/**
  * Get a date range for calendar queries (current month ± buffer months).
  * Returns { start, end } date strings for database queries.
  */

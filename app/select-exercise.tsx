@@ -11,26 +11,45 @@ import {
 } from "react-native";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { ExerciseInfoModal } from "@/components/ExerciseInfoModal";
 import { Text, View } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
 import { useDatabase } from "@/contexts/DatabaseContext";
-import { getAllExerciseDefinitions, getExerciseForDateByDefinition, getUsedExerciseIds } from "@/db/database";
-import type { ExerciseType } from "@/types";
+import { useUnits } from "@/contexts/UnitContext";
+import {
+  getAllExerciseDefinitions,
+  getExerciseForDateByDefinition,
+  getExerciseHistoryWithSets,
+  getRecentExerciseDefinitionIds,
+  getUsedExerciseIds,
+  setExerciseFavourite,
+} from "@/db/database";
+import type { ExerciseType, Set as WorkoutSet } from "@/types";
 import { parseDateParam } from "@/utils/date";
+import { calculateOneRepMax } from "@/utils/format";
 
 const USED_FILTER_STORAGE_KEY = "@select_exercise_show_only_used";
+const RECENT_EXERCISES_LIMIT = 10;
 
 interface ExerciseItem {
   name: string;
   id: string;
   type: ExerciseType;
   category: string;
+  description: string | null;
+  mediaUri: string | null;
+  mediaType: "image" | "video" | null;
+  isFavourite: boolean;
 }
 
 interface ExerciseSection {
   title: string;
   data: ExerciseItem[];
+  count: number;
+  special?: boolean;
 }
 
 export default function SelectExerciseScreen() {
@@ -39,10 +58,21 @@ export default function SelectExerciseScreen() {
   const colors = Colors[colorScheme ?? "light"];
   const [allExercises, setAllExercises] = useState<ExerciseItem[]>([]);
   const [usedExerciseIds, setUsedExerciseIds] = useState<string[]>([]);
+  const [recentExerciseIds, setRecentExerciseIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isReady: dbReady } = useDatabase();
+  const { weightUnit, distanceUnit } = useUnits();
+  const insets = useSafeAreaInsets();
   const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+
+  // Exercise info (help) modal state
+  const [infoExercise, setInfoExercise] = useState<ExerciseItem | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [infoHistory, setInfoHistory] = useState<
+    { date: string; sets: WorkoutSet[] }[]
+  >([]);
+  const [infoOneRM, setInfoOneRM] = useState<number | null>(null);
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,13 +86,21 @@ export default function SelectExerciseScreen() {
       const filtered = allExercises.filter((ex) =>
         ex.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       );
-      const categoriesWithMatches = new Set(filtered.map(ex => ex.category));
+      const categoriesWithMatches = new Set<string>(
+        filtered.map((ex) => ex.category)
+      );
+      if (filtered.some((ex) => ex.isFavourite)) {
+        categoriesWithMatches.add("Favourites");
+      }
+      if (filtered.some((ex) => recentExerciseIds.includes(ex.id))) {
+        categoriesWithMatches.add("Recent");
+      }
       setExpandedCategories(categoriesWithMatches);
     } else {
       // When search is cleared, collapse all categories
       setExpandedCategories(new Set());
     }
-  }, [searchQuery, allExercises]);
+  }, [searchQuery, allExercises, recentExerciseIds]);
 
   // Parse date from params using centralized utility
   const exerciseDate = parseDateParam(dateParam);
@@ -106,9 +144,10 @@ export default function SelectExerciseScreen() {
     const loadExerciseData = async () => {
       try {
         setLoading(true);
-        const [definitions, usedIds] = await Promise.all([
+        const [definitions, usedIds, recentIds] = await Promise.all([
           getAllExerciseDefinitions(),
           getUsedExerciseIds(),
+          getRecentExerciseDefinitionIds(RECENT_EXERCISES_LIMIT),
         ]);
 
         const exercises: ExerciseItem[] = definitions.map((def) => ({
@@ -116,10 +155,15 @@ export default function SelectExerciseScreen() {
           name: def.name,
           type: def.type as ExerciseType,
           category: def.category,
+          description: def.description,
+          mediaUri: def.mediaUri,
+          mediaType: def.mediaType as "image" | "video" | null,
+          isFavourite: !!def.isFavourite,
         }));
 
         setAllExercises(exercises);
         setUsedExerciseIds(usedIds);
+        setRecentExerciseIds(recentIds);
       } catch (err) {
 
         setError("Failed to load exercises");
@@ -147,7 +191,38 @@ export default function SelectExerciseScreen() {
       filtered = filtered.filter((ex) => usedExerciseIds.includes(ex.id));
     }
 
-    // Group by category
+    const filteredIds = new Set(filtered.map((ex) => ex.id));
+    const byId = new Map(filtered.map((ex) => [ex.id, ex]));
+
+    const sections: ExerciseSection[] = [];
+
+    // Favourites - tagged via the exercise info (help) screen
+    const favouriteExercises = filtered
+      .filter((ex) => ex.isFavourite)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (favouriteExercises.length > 0) {
+      sections.push({
+        title: "Favourites",
+        data: expandedCategories.has("Favourites") ? favouriteExercises : [],
+        count: favouriteExercises.length,
+        special: true,
+      });
+    }
+
+    // Recent - most recently logged, preserving recency order
+    const recentExercises = recentExerciseIds
+      .filter((id) => filteredIds.has(id))
+      .map((id) => byId.get(id)!);
+    if (recentExercises.length > 0) {
+      sections.push({
+        title: "Recent",
+        data: expandedCategories.has("Recent") ? recentExercises : [],
+        count: recentExercises.length,
+        special: true,
+      });
+    }
+
+    // Group remaining exercises by category
     const categories = new Map<string, ExerciseItem[]>();
 
     // Get unique categories from filtered exercises
@@ -165,17 +240,24 @@ export default function SelectExerciseScreen() {
       }
     }
 
-    // Convert map to array of sections, only including data for expanded categories
-    const sections: ExerciseSection[] = [];
+    // Add category sections, only including data for expanded categories
     categories.forEach((data, title) => {
-      sections.push({ 
-        title, 
-        data: expandedCategories.has(title) ? data : [] 
+      sections.push({
+        title,
+        data: expandedCategories.has(title) ? data : [],
+        count: data.length,
       });
     });
 
     return sections;
-  }, [allExercises, usedExerciseIds, searchQuery, showOnlyUsed, expandedCategories]);
+  }, [
+    allExercises,
+    usedExerciseIds,
+    recentExerciseIds,
+    searchQuery,
+    showOnlyUsed,
+    expandedCategories,
+  ]);
 
   const handleClose = () => {
     router.back();
@@ -213,6 +295,45 @@ export default function SelectExerciseScreen() {
     }
   };
 
+  const handleLongPressExercise = async (item: ExerciseItem) => {
+    setInfoExercise(item);
+    setShowInfoModal(true);
+
+    const history = await getExerciseHistoryWithSets(item.name, 30);
+    setInfoHistory(history);
+
+    if (item.type === "weight_reps") {
+      let bestOneRM: number | null = null;
+      for (const entry of history) {
+        for (const set of entry.sets) {
+          if (set.weight && set.reps) {
+            const oneRM = calculateOneRepMax(set.weight, set.reps);
+            if (oneRM && (bestOneRM === null || oneRM > bestOneRM)) {
+              bestOneRM = oneRM;
+            }
+          }
+        }
+      }
+      setInfoOneRM(bestOneRM);
+    } else {
+      setInfoOneRM(null);
+    }
+  };
+
+  const handleToggleFavourite = async () => {
+    if (!infoExercise) return;
+    const next = !infoExercise.isFavourite;
+
+    setInfoExercise({ ...infoExercise, isFavourite: next });
+    setAllExercises((prev) =>
+      prev.map((ex) =>
+        ex.id === infoExercise.id ? { ...ex, isFavourite: next } : ex
+      )
+    );
+
+    await setExerciseFavourite(infoExercise.id, next);
+  };
+
   const toggleShowOnlyUsed = () => {
     setShowOnlyUsed(!showOnlyUsed);
   };
@@ -237,6 +358,8 @@ export default function SelectExerciseScreen() {
         { borderBottomColor: colors.border },
       ]}
       onPress={() => handleSelectExercise(item)}
+      onLongPress={() => handleLongPressExercise(item)}
+      delayLongPress={400}
       activeOpacity={0.6}
     >
       <Text style={[styles.exerciseName, { color: colors.text }]}>
@@ -249,26 +372,25 @@ export default function SelectExerciseScreen() {
   );
 
   const renderSectionHeader = ({
-    section: { title, data },
+    section: { title, count, special },
   }: {
     section: ExerciseSection;
   }) => {
     const isExpanded = expandedCategories.has(title);
-    // Show filtered count when searching, otherwise show total
-    const totalCount = allExercises.filter(ex => ex.category === title).length;
-    const filteredCount = data.length;
-    const displayCount = searchQuery.trim() ? filteredCount : totalCount;
-    
+
     return (
       <TouchableOpacity
         style={[styles.sectionHeader, { backgroundColor: colors.background }]}
         onPress={() => toggleCategoryExpanded(title)}
         activeOpacity={0.7}
       >
-        <Text style={[styles.sectionTitle, { color: colors.tint }]}>{title}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.tint }]}>
+          {special && (title === "Favourites" ? "★ " : "⏱ ")}
+          {title}
+        </Text>
         <View style={styles.sectionHeaderRight}>
           <Text style={[styles.exerciseCount, { color: colors.textSecondary }]}>
-            {displayCount}
+            {count}
           </Text>
           <FontAwesome
             name={isExpanded ? "chevron-up" : "chevron-down"}
@@ -328,6 +450,7 @@ export default function SelectExerciseScreen() {
           {
             backgroundColor: colors.background,
             borderBottomColor: colors.border,
+            paddingTop: insets.top + 10,
           },
         ]}
       >
@@ -415,7 +538,7 @@ export default function SelectExerciseScreen() {
       {/* Exercise List by Category */}
       <SectionList
         sections={exerciseData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         renderItem={renderExerciseRow}
         renderSectionHeader={renderSectionHeader}
         stickySectionHeadersEnabled={true}
@@ -435,6 +558,25 @@ export default function SelectExerciseScreen() {
           </View>
         }
       />
+
+      {/* Exercise Info (Help) Modal - opened via long press */}
+      {infoExercise && (
+        <ExerciseInfoModal
+          visible={showInfoModal}
+          onClose={() => setShowInfoModal(false)}
+          exerciseName={infoExercise.name}
+          exerciseType={infoExercise.type}
+          description={infoExercise.description}
+          mediaUri={infoExercise.mediaUri}
+          mediaType={infoExercise.mediaType}
+          history={infoHistory}
+          estimatedOneRM={infoOneRM}
+          weightUnit={weightUnit}
+          distanceUnit={distanceUnit}
+          isFavourite={infoExercise.isFavourite}
+          onToggleFavourite={handleToggleFavourite}
+        />
+      )}
     </View>
   );
 }
@@ -464,7 +606,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 24,
     borderBottomWidth: 1,

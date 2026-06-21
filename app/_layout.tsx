@@ -10,6 +10,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { View } from "react-native";
 import "react-native-reanimated";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
@@ -83,11 +84,13 @@ export default function RootLayout() {
   }
 
   return (
-    <CustomThemeProvider>
-      <UnitProvider>
-        <RootLayoutNav />
-      </UnitProvider>
-    </CustomThemeProvider>
+    <SafeAreaProvider>
+      <CustomThemeProvider>
+        <UnitProvider>
+          <RootLayoutNav />
+        </UnitProvider>
+      </CustomThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -201,6 +204,50 @@ function RootLayoutNav() {
             />
             <Stack.Screen
               name="import-exercises"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.background,
+                },
+                animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="templates"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.background,
+                },
+                animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="manage-templates"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.background,
+                },
+                animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="edit-template"
+              options={{
+                presentation: "transparentModal",
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.background,
+                },
+                animation: "slide_from_bottom",
+              }}
+            />
+            <Stack.Screen
+              name="body-measurements"
               options={{
                 presentation: "transparentModal",
                 headerShown: false,

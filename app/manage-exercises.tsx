@@ -30,6 +30,8 @@ interface ExerciseDefinition {
   type: ExerciseType;
   unit: string;
   description: string | null;
+  mediaUri: string | null;
+  mediaType: string | null;
 }
 
 export default function ManageExercisesScreen() {
@@ -42,13 +44,9 @@ export default function ManageExercisesScreen() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
-
-  // Edit modal state
-  const [editingExercise, setEditingExercise] =
-    useState<ExerciseDefinition | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [isCustomCategory, setIsCustomCategory] = useState(false);
-  const [customCategory, setCustomCategory] = useState("");
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Bulk category change state
   const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
@@ -71,6 +69,8 @@ export default function ManageExercisesScreen() {
           type: d.type as ExerciseType,
           unit: d.unit,
           description: d.description,
+          mediaUri: d.mediaUri,
+          mediaType: d.mediaType,
         })),
       );
       setCategories(cats);
@@ -161,46 +161,23 @@ export default function ManageExercisesScreen() {
     );
   };
 
-  const handleEditExercise = (exercise: ExerciseDefinition) => {
-    setEditingExercise({ ...exercise });
-    setIsCustomCategory(!categories.includes(exercise.category));
-    setCustomCategory(
-      !categories.includes(exercise.category) ? exercise.category : "",
-    );
-    setShowEditModal(true);
+  const toggleCategoryCollapsed = (category: string) => {
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingExercise) return;
-
-    const finalCategory = isCustomCategory
-      ? customCategory.trim()
-      : editingExercise.category;
-
-    if (!editingExercise.name.trim()) {
-      Alert.alert("Error", "Exercise name is required");
-      return;
-    }
-
-    if (!finalCategory) {
-      Alert.alert("Error", "Category is required");
-      return;
-    }
-
-    try {
-      await updateExerciseDefinition(editingExercise.id, {
-        name: editingExercise.name.trim(),
-        category: finalCategory,
-        type: editingExercise.type,
-        unit: editingExercise.unit,
-        description: editingExercise.description || undefined,
-      });
-      setShowEditModal(false);
-      setEditingExercise(null);
-      loadExercises();
-    } catch (error) {
-      Alert.alert("Error", "Failed to update exercise");
-    }
+  const handleEditExercise = (exercise: ExerciseDefinition) => {
+    router.push({
+      pathname: "/add-exercise-definition",
+      params: { id: exercise.id },
+    });
   };
 
   const handleBulkCategoryChange = () => {
@@ -395,12 +372,30 @@ export default function ManageExercisesScreen() {
           </View>
         ) : (
           Array.from(groupedExercises.entries()).map(
-            ([category, categoryExercises]) => (
+            ([category, categoryExercises]) => {
+              // While searching, always show matches regardless of the
+              // category's manually-toggled collapse state
+              const isExpanded =
+                !collapsedCategories.has(category) || !!searchQuery.trim();
+
+              return (
               <View key={category} style={styles.categorySection}>
-                <Text style={[styles.categoryTitle, { color: colors.tint }]}>
-                  {category} ({categoryExercises.length})
-                </Text>
-                {categoryExercises.map((exercise) => (
+                <TouchableOpacity
+                  style={styles.categoryHeader}
+                  onPress={() => toggleCategoryCollapsed(category)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.categoryTitle, { color: colors.tint }]}>
+                    {category} ({categoryExercises.length})
+                  </Text>
+                  <FontAwesome
+                    name={isExpanded ? "chevron-up" : "chevron-down"}
+                    size={14}
+                    color={colors.tint}
+                  />
+                </TouchableOpacity>
+                {isExpanded &&
+                categoryExercises.map((exercise) => (
                   <TouchableOpacity
                     key={exercise.id}
                     style={[
@@ -472,180 +467,11 @@ export default function ManageExercisesScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-            ),
+              );
+            },
           )
         )}
       </ScrollView>
-
-      {/* Edit Modal */}
-      <Modal
-        visible={showEditModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <View
-          style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}
-        >
-          <View
-            style={[
-              styles.modalContent,
-              { backgroundColor: colors.background },
-            ]}
-          >
-            <View
-              style={[styles.modalHeader, { borderBottomColor: colors.border }]}
-            >
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Edit Exercise
-              </Text>
-              <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                <Text style={[styles.closeText, { color: colors.tint }]}>
-                  ✕
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              {editingExercise && (
-                <>
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.label, { color: colors.text }]}>
-                      Name
-                    </Text>
-                    <TextInput
-                      style={[
-                        styles.textInput,
-                        {
-                          color: colors.text,
-                          backgroundColor: colors.surface,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                      value={editingExercise.name}
-                      onChangeText={(text) =>
-                        setEditingExercise({ ...editingExercise, name: text })
-                      }
-                      placeholder="Exercise name"
-                      placeholderTextColor={colors.textSecondary}
-                    />
-                  </View>
-
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.label, { color: colors.text }]}>
-                      Category
-                    </Text>
-                    <RNView
-                      style={[
-                        styles.pickerContainer,
-                        {
-                          backgroundColor: colors.surface,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Picker
-                        selectedValue={
-                          isCustomCategory
-                            ? "__CUSTOM__"
-                            : editingExercise.category
-                        }
-                        onValueChange={(value) => {
-                          if (value === "__CUSTOM__") {
-                            setIsCustomCategory(true);
-                          } else {
-                            setIsCustomCategory(false);
-                            setEditingExercise({
-                              ...editingExercise,
-                              category: value,
-                            });
-                          }
-                        }}
-                        style={{ color: colors.text }}
-                        dropdownIconColor={colors.tint}
-                      >
-                        {categories.map((cat) => (
-                          <Picker.Item key={cat} label={cat} value={cat} />
-                        ))}
-                        <Picker.Item
-                          label="+ New Category"
-                          value="__CUSTOM__"
-                        />
-                      </Picker>
-                    </RNView>
-                    {isCustomCategory && (
-                      <TextInput
-                        style={[
-                          styles.textInput,
-                          {
-                            color: colors.text,
-                            backgroundColor: colors.surface,
-                            borderColor: colors.border,
-                            marginTop: 8,
-                          },
-                        ]}
-                        value={customCategory}
-                        onChangeText={setCustomCategory}
-                        placeholder="Enter new category"
-                        placeholderTextColor={colors.textSecondary}
-                      />
-                    )}
-                  </View>
-
-                  <View style={styles.inputGroup}>
-                    <Text style={[styles.label, { color: colors.text }]}>
-                      Description (Optional)
-                    </Text>
-                    <TextInput
-                      style={[
-                        styles.textInput,
-                        styles.textArea,
-                        {
-                          color: colors.text,
-                          backgroundColor: colors.surface,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                      value={editingExercise.description || ""}
-                      onChangeText={(text) =>
-                        setEditingExercise({
-                          ...editingExercise,
-                          description: text,
-                        })
-                      }
-                      placeholder="Exercise description"
-                      placeholderTextColor={colors.textSecondary}
-                      multiline
-                      numberOfLines={3}
-                    />
-                  </View>
-                </>
-              )}
-            </ScrollView>
-
-            <View
-              style={[styles.modalFooter, { borderTopColor: colors.border }]}
-            >
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.border }]}
-                onPress={() => setShowEditModal(false)}
-              >
-                <Text style={[styles.modalButtonText, { color: colors.text }]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: colors.tint }]}
-                onPress={handleSaveEdit}
-              >
-                <Text style={[styles.modalButtonText, { color: "#fff" }]}>
-                  Save
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Bulk Category Modal */}
       <Modal
@@ -858,10 +684,16 @@ const styles = StyleSheet.create({
   categorySection: {
     marginBottom: 20,
   },
+  categoryHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+    paddingRight: 4,
+  },
   categoryTitle: {
     fontSize: 14,
     fontWeight: "700",
-    marginBottom: 8,
     marginLeft: 4,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -907,19 +739,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     maxHeight: "80%",
   },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-  },
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-  },
-  modalBody: {
-    padding: 16,
   },
   modalFooter: {
     flexDirection: "row",
@@ -928,25 +750,12 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
   },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-    opacity: 0.7,
-  },
   textInput: {
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: "top",
   },
   pickerContainer: {
     borderWidth: 1,

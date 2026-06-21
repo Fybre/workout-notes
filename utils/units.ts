@@ -72,6 +72,19 @@ export function milesToKm(miles: number): number {
 }
 
 /**
+ * Convert body measurement units (cm/inches). Body measurements are always
+ * stored in cm; the displayed unit follows the distance unit preference
+ * (km -> cm, miles -> inches) since both express the same metric/imperial choice.
+ */
+export function cmToInches(cm: number): number {
+  return Math.round(cm * 0.393701 * 10) / 10;
+}
+
+export function inchesToCm(inches: number): number {
+  return Math.round(inches * 2.54 * 10) / 10;
+}
+
+/**
  * Format distance for display
  */
 export function formatDistance(

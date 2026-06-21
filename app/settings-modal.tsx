@@ -4,7 +4,8 @@ import Colors from "@/constants/Colors";
 import { clearDatabase, clearWorkoutData } from "@/db/database";
 import {
   createAndShareBackup,
-  pickAndRestoreBackup,
+  pickBackupFile,
+  restoreFromBackup,
   getDatabaseSize,
   formatFileSize,
 } from "@/db/backup";
@@ -94,14 +95,14 @@ export default function SettingsModal() {
     router.back();
   };
 
-  const handleBackup = async () => {
+  const runBackup = async (includeSettings: boolean) => {
     setIsBackingUp(true);
     try {
-      const result = await createAndShareBackup();
+      const result = await createAndShareBackup(includeSettings);
       if (result.success) {
         Alert.alert(
           "Backup Created",
-          `Your workout data has been backed up successfully.\n\nSize: ${formatFileSize(result.fileSize ?? 0)}`,
+          `Your workout data${includeSettings ? " and settings" : ""} has been backed up successfully.\n\nSize: ${formatFileSize(result.fileSize ?? 0)}`,
         );
         // Refresh database size
         setDbSize(await getDatabaseSize());
@@ -115,6 +116,38 @@ export default function SettingsModal() {
     }
   };
 
+  const handleBackup = () => {
+    Alert.alert(
+      "Backup Data",
+      "Include your app settings (theme, units, rest timer) in the backup?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Data Only", onPress: () => runBackup(false) },
+        { text: "Data + Settings", onPress: () => runBackup(true) },
+      ],
+    );
+  };
+
+  const finishRestore = async (sourceUri: string, restoreSettings: boolean) => {
+    setIsRestoring(true);
+    try {
+      const result = await restoreFromBackup(sourceUri, restoreSettings);
+      if (result.success) {
+        Alert.alert(
+          "Restore Complete",
+          "Your data has been restored. Please restart the app to complete the process.",
+          [{ text: "OK", onPress: () => router.back() }],
+        );
+      } else {
+        Alert.alert("Restore Failed", result.error ?? "Failed to restore backup");
+      }
+    } catch (error) {
+      Alert.alert("Error", "An unexpected error occurred during restore");
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   const handleRestore = () => {
     Alert.alert(
       "Restore Data",
@@ -125,31 +158,55 @@ export default function SettingsModal() {
           style: "cancel",
         },
         {
-          text: "Restore",
+          text: "Choose Backup File",
           style: "destructive",
           onPress: async () => {
-            setIsRestoring(true);
-            try {
-              const result = await pickAndRestoreBackup();
-              if (result.success) {
-                if (result.requiresRestart) {
-                  Alert.alert(
-                    "Restore Complete",
-                    "Your data has been restored. Please restart the app to complete the process.",
-                    [{ text: "OK", onPress: () => router.back() }],
-                  );
-                } else {
-                  Alert.alert("Restore Complete", "Your data has been restored successfully.");
-                }
-              } else {
-                if (result.error !== "User cancelled") {
-                  Alert.alert("Restore Failed", result.error ?? "Failed to restore backup");
-                }
+            const picked = await pickBackupFile();
+            if (!picked.success || !picked.backup) {
+              if (picked.error !== "User cancelled") {
+                Alert.alert("Restore Failed", picked.error ?? "Failed to read backup");
               }
-            } catch (error) {
-              Alert.alert("Error", "An unexpected error occurred during restore");
-            } finally {
-              setIsRestoring(false);
+              return;
+            }
+
+            const { uri, hasSettings, isNewerThanApp } = picked.backup;
+
+            const promptForSettings = () => {
+              if (hasSettings) {
+                Alert.alert(
+                  "Restore Settings?",
+                  "This backup also includes app settings (theme, units, rest timer). Restore those too?",
+                  [
+                    {
+                      text: "Data Only",
+                      onPress: () => finishRestore(uri, false),
+                    },
+                    {
+                      text: "Data + Settings",
+                      onPress: () => finishRestore(uri, true),
+                    },
+                  ],
+                );
+              } else {
+                finishRestore(uri, false);
+              }
+            };
+
+            if (isNewerThanApp) {
+              Alert.alert(
+                "Backup From a Newer Version",
+                "This backup was created with a newer version of the app than you're currently running. Restoring it may not work correctly until you update the app. Continue anyway?",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Continue",
+                    style: "destructive",
+                    onPress: promptForSettings,
+                  },
+                ],
+              );
+            } else {
+              promptForSettings();
             }
           },
         },
@@ -551,7 +608,7 @@ export default function SettingsModal() {
                 <Text
                   style={[styles.settingHint, { color: colors.textSecondary }]}
                 >
-                  Export to file
+                  Exercises, photos/videos, and optionally settings
                 </Text>
               </View>
               {isBackingUp ? (
@@ -575,7 +632,7 @@ export default function SettingsModal() {
                 <Text
                   style={[styles.settingHint, { color: colors.textSecondary }]}
                 >
-                  Import from backup
+                  Import from a backup file
                 </Text>
               </View>
               {isRestoring ? (
@@ -674,6 +731,23 @@ export default function SettingsModal() {
                 </Text>
                 <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
                   Load exercise sets from GitHub (merge or replace)
+                </Text>
+              </View>
+              <Text style={[styles.settingValue, { color: colors.tint }]}>
+                →
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.settingItem, { borderBottomColor: colors.border }]}
+              onPress={() => router.push("/manage-templates")}
+            >
+              <View>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>
+                  Manage Templates
+                </Text>
+                <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
+                  Rename, reorder, or edit exercises in your saved templates
                 </Text>
               </View>
               <Text style={[styles.settingValue, { color: colors.tint }]}>

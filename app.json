@@ -16,7 +16,14 @@
     "ios": {
       "supportsTablet": true,
       "backgroundColor": "#121212",
-      "bundleIdentifier": "com.fybre.workoutnotes"
+      "bundleIdentifier": "me.fybre.workoutnotes",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Workout Notes uses speech recognition to convert your voice into workout data. For example, saying \"80 by 5\" will be recognized and logged as 80kg for 5 reps.",
+        "NSMicrophoneUsageDescription": "Workout Notes uses the microphone for hands-free set logging. For example, tap the mic button and say \"100 by 10\" to log a set of 100kg for 10 reps without typing on the keypad.",
+        "NSCameraUsageDescription": "Workout Notes uses the camera to take a photo or video of equipment or training technique for an exercise.",
+        "NSPhotoLibraryUsageDescription": "Workout Notes uses your photo library to attach a photo or video of equipment or training technique to an exercise.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +32,11 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.fybre.workoutnotes"
+      "package": "me.fybre.workoutnotes",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -51,6 +62,13 @@
             "packageName": "com.google.android.googlequicksearchbox",
             "action": "android.speech.RecognitionService"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Workout Notes uses your photo library to attach a photo or video of equipment or training technique to an exercise.",
+          "cameraPermission": "Workout Notes uses the camera to take a photo or video of equipment or training technique for an exercise."
         }
       ]
     ],

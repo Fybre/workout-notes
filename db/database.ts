@@ -2,6 +2,7 @@ import type { ExerciseType } from "@/types/workout";
 import { Set } from "@/types/workout";
 import { generateId } from "@/utils/id";
 import { compareSets } from "@/utils/pb-utils";
+import { deleteExerciseMediaFile, resolveMediaUri } from "@/utils/media";
 import * as SQLite from "expo-sqlite";
 import { useSQLiteContext } from "expo-sqlite";
 import { initializeSchemaVersion, runMigrations } from "./schema";
@@ -19,6 +20,9 @@ const SCHEMA_SQL = `
     type TEXT NOT NULL,
     unit TEXT NOT NULL,
     description TEXT,
+    mediaUri TEXT,
+    mediaType TEXT,
+    isFavourite INTEGER NOT NULL DEFAULT 0,
     createdAt INTEGER NOT NULL
   );
 
@@ -42,9 +46,40 @@ const SCHEMA_SQL = `
     FOREIGN KEY(exerciseId) REFERENCES exercises(id)
   );
 
+  CREATE TABLE IF NOT EXISTS templates (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    createdAt INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS template_exercises (
+    id TEXT PRIMARY KEY,
+    templateId TEXT NOT NULL,
+    definitionId TEXT NOT NULL,
+    orderIndex INTEGER NOT NULL,
+    FOREIGN KEY(templateId) REFERENCES templates(id),
+    FOREIGN KEY(definitionId) REFERENCES exercise_definitions(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS body_measurements (
+    id TEXT PRIMARY KEY,
+    date TEXT NOT NULL UNIQUE,
+    weight REAL,
+    bodyFatPercent REAL,
+    chest REAL,
+    waist REAL,
+    hips REAL,
+    arms REAL,
+    thighs REAL,
+    note TEXT,
+    createdAt INTEGER NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_exercises_date ON exercises(date);
   CREATE INDEX IF NOT EXISTS idx_sets_exerciseId ON sets(exerciseId);
   CREATE INDEX IF NOT EXISTS idx_exercise_definitions_name ON exercise_definitions(name);
+  CREATE INDEX IF NOT EXISTS idx_template_exercises_templateId ON template_exercises(templateId);
+  CREATE INDEX IF NOT EXISTS idx_body_measurements_date ON body_measurements(date);
 `;
 
 // Called by SQLiteProvider's onInit - receives the managed database instance
@@ -132,6 +167,10 @@ export async function updateSet(setId: string, updates: Partial<Set>) {
     params.push(updates.note);
   }
 
+  if (updateFields.length === 0) {
+    return;
+  }
+
   params.push(setId);
 
   await db.runAsync(
@@ -149,11 +188,13 @@ export async function deleteSet(setId: string) {
 export async function deleteExercise(exerciseId: string) {
   const db = getDatabase();
 
-  // First delete all sets associated with this exercise
-  await db.runAsync("DELETE FROM sets WHERE exerciseId = ?", [exerciseId]);
+  await db.withTransactionAsync(async () => {
+    // First delete all sets associated with this exercise
+    await db.runAsync("DELETE FROM sets WHERE exerciseId = ?", [exerciseId]);
 
-  // Then delete the exercise itself
-  await db.runAsync("DELETE FROM exercises WHERE id = ?", [exerciseId]);
+    // Then delete the exercise itself
+    await db.runAsync("DELETE FROM exercises WHERE id = ?", [exerciseId]);
+  });
 }
 
 // Exercise Definition operations
@@ -164,10 +205,12 @@ export async function addExerciseDefinition(definition: {
   type: string;
   unit: string;
   description?: string;
+  mediaUri?: string;
+  mediaType?: "image" | "video";
 }) {
   const db = getDatabase();
   await db.runAsync(
-    "INSERT INTO exercise_definitions (id, name, category, type, unit, description, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO exercise_definitions (id, name, category, type, unit, description, mediaUri, mediaType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       definition.id || generateId(),
       definition.name,
@@ -175,6 +218,8 @@ export async function addExerciseDefinition(definition: {
       definition.type,
       definition.unit,
       definition.description || null,
+      definition.mediaUri || null,
+      definition.mediaType || null,
       Date.now(),
     ],
   );
@@ -188,6 +233,8 @@ export async function updateExerciseDefinition(
     type?: string;
     unit?: string;
     description?: string;
+    mediaUri?: string | null;
+    mediaType?: "image" | "video" | null;
   }
 ) {
   const db = getDatabase();
@@ -215,6 +262,14 @@ export async function updateExerciseDefinition(
     updateFields.push("description = ?");
     params.push(updates.description || null);
   }
+  if (updates.mediaUri !== undefined) {
+    updateFields.push("mediaUri = ?");
+    params.push(updates.mediaUri);
+  }
+  if (updates.mediaType !== undefined) {
+    updateFields.push("mediaType = ?");
+    params.push(updates.mediaType);
+  }
 
   if (updateFields.length === 0) return;
 
@@ -228,6 +283,11 @@ export async function updateExerciseDefinition(
 
 export async function deleteExerciseDefinition(id: string) {
   const db = getDatabase();
+
+  const definition = await db.getFirstAsync<{ mediaUri: string | null }>(
+    "SELECT mediaUri FROM exercise_definitions WHERE id = ?",
+    [id]
+  );
 
   // First delete all sets for exercises using this definition
   await db.runAsync(
@@ -246,6 +306,11 @@ export async function deleteExerciseDefinition(id: string) {
     "DELETE FROM exercise_definitions WHERE id = ?",
     [id]
   );
+
+  const resolvedMediaUri = resolveMediaUri(definition?.mediaUri ?? null);
+  if (resolvedMediaUri) {
+    await deleteExerciseMediaFile(resolvedMediaUri);
+  }
 }
 
 export async function getExerciseDefinitionCount(): Promise<number> {
@@ -264,18 +329,26 @@ export async function getAllExerciseDefinitions(): Promise<
     type: string;
     unit: string;
     description: string | null;
+    mediaUri: string | null;
+    mediaType: string | null;
+    isFavourite: number;
   }[]
 > {
   const db = getDatabase();
 
-  return await db.getAllAsync<{
+  const results = await db.getAllAsync<{
     id: string;
     name: string;
     category: string;
     type: string;
     unit: string;
     description: string | null;
+    mediaUri: string | null;
+    mediaType: string | null;
+    isFavourite: number;
   }>("SELECT * FROM exercise_definitions ORDER BY name ASC");
+
+  return results.map((r) => ({ ...r, mediaUri: resolveMediaUri(r.mediaUri) }));
 }
 
 export async function getUniqueCategories(): Promise<string[]> {
@@ -295,6 +368,9 @@ export async function getExerciseDefinitionByName(name: string): Promise<{
   type: string;
   unit: string;
   description: string | null;
+  mediaUri: string | null;
+  mediaType: string | null;
+  isFavourite: number;
 } | null> {
   const db = getDatabase();
 
@@ -303,7 +379,60 @@ export async function getExerciseDefinitionByName(name: string): Promise<{
     [name],
   );
 
-  return results.length > 0 ? results[0] : null;
+  if (results.length === 0) return null;
+  return { ...results[0], mediaUri: resolveMediaUri(results[0].mediaUri) };
+}
+
+export async function getExerciseDefinitionById(id: string): Promise<{
+  id: string;
+  name: string;
+  category: string;
+  type: string;
+  unit: string;
+  description: string | null;
+  mediaUri: string | null;
+  mediaType: string | null;
+  isFavourite: number;
+} | null> {
+  const db = getDatabase();
+
+  const result = await db.getFirstAsync<any>(
+    "SELECT * FROM exercise_definitions WHERE id = ? LIMIT 1",
+    [id],
+  );
+
+  if (!result) return null;
+  return { ...result, mediaUri: resolveMediaUri(result.mediaUri) };
+}
+
+export async function setExerciseFavourite(
+  id: string,
+  isFavourite: boolean,
+): Promise<void> {
+  const db = getDatabase();
+
+  await db.runAsync(
+    "UPDATE exercise_definitions SET isFavourite = ? WHERE id = ?",
+    [isFavourite ? 1 : 0, id],
+  );
+}
+
+// Get exercise definition IDs ordered by most recently logged, most recent first
+export async function getRecentExerciseDefinitionIds(
+  limit: number = 10,
+): Promise<string[]> {
+  const db = getDatabase();
+
+  const results = await db.getAllAsync<{ definitionId: string }>(
+    `SELECT definitionId, MAX(date) as lastDate
+     FROM exercises
+     GROUP BY definitionId
+     ORDER BY lastDate DESC
+     LIMIT ?`,
+    [limit],
+  );
+
+  return results.map((r) => r.definitionId);
 }
 
 // Updated Exercise operations for new schema
@@ -991,6 +1120,7 @@ export async function clearDatabase() {
         DROP TABLE IF EXISTS sets;
         DROP TABLE IF EXISTS exercises;
         DROP TABLE IF EXISTS exercise_definitions;
+        DROP TABLE IF EXISTS body_measurements;
       `);
 
       // Recreate tables using shared schema (single source of truth)
@@ -1004,6 +1134,278 @@ export async function clearDatabase() {
   }
 }
 
+// Template operations
+export async function createTemplate(
+  name: string,
+  definitionIds: string[],
+): Promise<string> {
+  const db = getDatabase();
+  const templateId = generateId();
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      "INSERT INTO templates (id, name, createdAt) VALUES (?, ?, ?)",
+      [templateId, name, Date.now()],
+    );
+
+    for (let i = 0; i < definitionIds.length; i++) {
+      await db.runAsync(
+        "INSERT INTO template_exercises (id, templateId, definitionId, orderIndex) VALUES (?, ?, ?, ?)",
+        [generateId(), templateId, definitionIds[i], i],
+      );
+    }
+  });
+
+  return templateId;
+}
+
+export async function getAllTemplates(): Promise<
+  { id: string; name: string; createdAt: number; exerciseCount: number }[]
+> {
+  const db = getDatabase();
+
+  return await db.getAllAsync<{
+    id: string;
+    name: string;
+    createdAt: number;
+    exerciseCount: number;
+  }>(
+    `SELECT t.id, t.name, t.createdAt, COUNT(te.id) as exerciseCount
+     FROM templates t
+     LEFT JOIN template_exercises te ON te.templateId = t.id
+     GROUP BY t.id
+     ORDER BY t.name ASC`,
+  );
+}
+
+export async function getTemplateExercises(templateId: string): Promise<
+  { id: string; name: string; category: string; type: string }[]
+> {
+  const db = getDatabase();
+
+  return await db.getAllAsync<{
+    id: string;
+    name: string;
+    category: string;
+    type: string;
+  }>(
+    `SELECT ed.id, ed.name, ed.category, ed.type
+     FROM template_exercises te
+     JOIN exercise_definitions ed ON ed.id = te.definitionId
+     WHERE te.templateId = ?
+     ORDER BY te.orderIndex ASC`,
+    [templateId],
+  );
+}
+
+export async function deleteTemplate(templateId: string): Promise<void> {
+  const db = getDatabase();
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync("DELETE FROM template_exercises WHERE templateId = ?", [
+      templateId,
+    ]);
+    await db.runAsync("DELETE FROM templates WHERE id = ?", [templateId]);
+  });
+}
+
+export async function getTemplateById(
+  templateId: string,
+): Promise<{ id: string; name: string; createdAt: number } | null> {
+  const db = getDatabase();
+
+  const result = await db.getFirstAsync<{
+    id: string;
+    name: string;
+    createdAt: number;
+  }>("SELECT id, name, createdAt FROM templates WHERE id = ?", [templateId]);
+
+  return result ?? null;
+}
+
+/**
+ * Renames a template and replaces its exercise list (and order) wholesale.
+ */
+export async function updateTemplate(
+  templateId: string,
+  name: string,
+  definitionIds: string[],
+): Promise<void> {
+  const db = getDatabase();
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync("UPDATE templates SET name = ? WHERE id = ?", [
+      name,
+      templateId,
+    ]);
+
+    await db.runAsync("DELETE FROM template_exercises WHERE templateId = ?", [
+      templateId,
+    ]);
+
+    for (let i = 0; i < definitionIds.length; i++) {
+      await db.runAsync(
+        "INSERT INTO template_exercises (id, templateId, definitionId, orderIndex) VALUES (?, ?, ?, ?)",
+        [generateId(), templateId, definitionIds[i], i],
+      );
+    }
+  });
+}
+
+/**
+ * Applies a template to a date by adding each of its exercises as a logged
+ * exercise (no sets) for that day. Exercises already present for the date
+ * are skipped so applying a template twice doesn't create duplicates.
+ */
+export async function applyTemplateToDate(
+  templateId: string,
+  date: string,
+): Promise<number> {
+  const db = getDatabase();
+
+  const templateExercises = await getTemplateExercises(templateId);
+
+  const existingDefinitionIds = new Set(
+    (
+      await db.getAllAsync<{ definitionId: string }>(
+        "SELECT definitionId FROM exercises WHERE date = ?",
+        [date],
+      )
+    ).map((r) => r.definitionId),
+  );
+
+  let addedCount = 0;
+
+  await db.withTransactionAsync(async () => {
+    for (const exercise of templateExercises) {
+      if (existingDefinitionIds.has(exercise.id)) continue;
+
+      await db.runAsync(
+        "INSERT INTO exercises (id, definitionId, date, createdAt) VALUES (?, ?, ?, ?)",
+        [generateId(), exercise.id, date, Date.now()],
+      );
+      addedCount++;
+    }
+  });
+
+  return addedCount;
+}
+
+// Body measurement operations
+export interface BodyMeasurementEntry {
+  id: string;
+  date: string;
+  weight: number | null;
+  bodyFatPercent: number | null;
+  chest: number | null;
+  waist: number | null;
+  hips: number | null;
+  arms: number | null;
+  thighs: number | null;
+  note: string | null;
+  createdAt: number;
+}
+
+export type BodyMeasurementFields = Omit<
+  BodyMeasurementEntry,
+  "id" | "date" | "createdAt"
+>;
+
+const BODY_MEASUREMENT_FIELD_NAMES = [
+  "weight",
+  "bodyFatPercent",
+  "chest",
+  "waist",
+  "hips",
+  "arms",
+  "thighs",
+  "note",
+] as const;
+
+/**
+ * Creates or updates the body measurement entry for a date (one entry per
+ * date - logging the same date again updates the existing entry).
+ */
+export async function saveBodyMeasurement(
+  date: string,
+  fields: Partial<BodyMeasurementFields>,
+): Promise<void> {
+  const db = getDatabase();
+
+  const existing = await db.getFirstAsync<{ id: string }>(
+    "SELECT id FROM body_measurements WHERE date = ?",
+    [date],
+  );
+
+  if (existing) {
+    const updateFields: string[] = [];
+    const params: (number | string | null)[] = [];
+
+    for (const key of BODY_MEASUREMENT_FIELD_NAMES) {
+      if (fields[key] !== undefined) {
+        updateFields.push(`${key} = ?`);
+        params.push(fields[key] ?? null);
+      }
+    }
+
+    if (updateFields.length === 0) return;
+
+    params.push(existing.id);
+    await db.runAsync(
+      `UPDATE body_measurements SET ${updateFields.join(", ")} WHERE id = ?`,
+      params,
+    );
+  } else {
+    await db.runAsync(
+      `INSERT INTO body_measurements
+        (id, date, weight, bodyFatPercent, chest, waist, hips, arms, thighs, note, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        generateId(),
+        date,
+        fields.weight ?? null,
+        fields.bodyFatPercent ?? null,
+        fields.chest ?? null,
+        fields.waist ?? null,
+        fields.hips ?? null,
+        fields.arms ?? null,
+        fields.thighs ?? null,
+        fields.note ?? null,
+        Date.now(),
+      ],
+    );
+  }
+}
+
+export async function getBodyMeasurementForDate(
+  date: string,
+): Promise<BodyMeasurementEntry | null> {
+  const db = getDatabase();
+
+  const result = await db.getFirstAsync<BodyMeasurementEntry>(
+    "SELECT * FROM body_measurements WHERE date = ?",
+    [date],
+  );
+
+  return result ?? null;
+}
+
+export async function getAllBodyMeasurements(): Promise<
+  BodyMeasurementEntry[]
+> {
+  const db = getDatabase();
+
+  return await db.getAllAsync<BodyMeasurementEntry>(
+    "SELECT * FROM body_measurements ORDER BY date ASC",
+  );
+}
+
+export async function deleteBodyMeasurement(date: string): Promise<void> {
+  const db = getDatabase();
+
+  await db.runAsync("DELETE FROM body_measurements WHERE date = ?", [date]);
+}
+
 export async function clearWorkoutData() {
   const db = getDatabase();
 
@@ -1015,6 +1417,9 @@ export async function clearWorkoutData() {
 
       // Delete all logged exercises
       await db.execAsync(`DELETE FROM exercises;`);
+
+      // Delete logged body measurements
+      await db.execAsync(`DELETE FROM body_measurements;`);
     });
   } catch (error) {
     throw error;

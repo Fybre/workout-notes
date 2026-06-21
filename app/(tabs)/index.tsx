@@ -1,9 +1,11 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Text as RNText,
+  TextInput,
   View as RNView,
   ScrollView,
   StyleSheet,
@@ -20,6 +22,7 @@ import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
 import { useDatabase } from "@/contexts/DatabaseContext";
 import {
+  createTemplate,
   deleteExercise,
   getExercisesForDate,
   getPersonalBestForExercise,
@@ -27,25 +30,38 @@ import {
 import { exportAndShareCsv } from "@/db/export";
 import { useCurrentDate, useDateNavigation } from "@/hooks/useDateNavigation";
 import type { Exercise, ExerciseType } from "@/types";
-import { formatDisplayDate, isToday } from "@/utils/date";
+import { formatRelativeDate, isToday } from "@/utils/date";
 import { formatSetForDisplay } from "@/utils/format";
 import { useUnits } from "@/contexts/UnitContext";
 import { findBestSetId, compareSets } from "@/utils/pb-utils";
 import { kgToLbs, kmToMiles } from "@/utils/units";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [collapsedExerciseIds, setCollapsedExerciseIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [menuVisible, setMenuVisible] = useState(false);
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState("");
   const { isReady: dbReady } = useDatabase();
   const [isExporting, setIsExporting] = useState(false);
   const { weightUnit, distanceUnit } = useUnits();
+  const insets = useSafeAreaInsets();
 
   // Use centralized date hooks
   const date = useCurrentDate();
   const { goToToday } = useDateNavigation();
+
+  // Track exercise count per date so we only auto-scroll when a new exercise
+  // was actually added (not on date navigation or unrelated refocus)
+  const exerciseListRef = useRef<ScrollView>(null);
+  const prevExerciseCountRef = useRef(0);
+  const prevDateRef = useRef<string | null>(null);
 
   // Load exercises for selected date when screen comes into focus and db is ready
   useFocusEffect(
@@ -100,6 +116,22 @@ export default function HomeScreen() {
           );
 
           setExercises(exercisesWithPB as Exercise[]);
+
+          // Scroll to the most recently added exercise (it's last in the
+          // list, ordered by createdAt) when one was just added for this
+          // same date - but not when switching dates or on an unrelated refocus
+          const isSameDate = prevDateRef.current === date;
+          const exerciseAdded =
+            isSameDate && exercisesWithPB.length > prevExerciseCountRef.current;
+          prevDateRef.current = date;
+          prevExerciseCountRef.current = exercisesWithPB.length;
+
+          if (exerciseAdded) {
+            // Defer until the new exercise card has actually rendered/laid out
+            setTimeout(() => {
+              exerciseListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }
         } catch (error) {
           console.error("Failed to load exercises:", error);
           setExercises([]);
@@ -111,7 +143,7 @@ export default function HomeScreen() {
   );
 
   // Format date for display using centralized utility
-  const dateString = formatDisplayDate(date);
+  const dateString = formatRelativeDate(date);
   const todayFlag = isToday(date);
 
   // Extract unique categories from exercises for the summary pills
@@ -136,6 +168,54 @@ export default function HomeScreen() {
   const navigateToSettings = () => {
     setMenuVisible(false);
     router.push("/settings-modal");
+  };
+
+  // Handle navigation to Manage Exercises
+  const navigateToManageExercises = () => {
+    setMenuVisible(false);
+    router.push("/manage-exercises");
+  };
+
+  // Handle navigation to Templates (load/manage)
+  const navigateToTemplates = () => {
+    setMenuVisible(false);
+    router.push({ pathname: "/templates", params: { date } });
+  };
+
+  // Handle navigation to Body Measurements
+  const navigateToBodyMeasurements = () => {
+    setMenuVisible(false);
+    router.push("/body-measurements");
+  };
+
+  // Handle opening the "Save as Template" naming modal
+  const handleOpenSaveTemplate = () => {
+    setMenuVisible(false);
+    if (exercises.length === 0) {
+      Alert.alert("No Exercises", "There are no exercises today to save as a template.");
+      return;
+    }
+    setTemplateName("");
+    setShowSaveTemplateModal(true);
+  };
+
+  const handleSaveTemplate = async () => {
+    const name = templateName.trim();
+    if (!name) {
+      Alert.alert("Error", "Template name is required");
+      return;
+    }
+
+    try {
+      await createTemplate(
+        name,
+        exercises.map((ex) => ex.definitionId),
+      );
+      setShowSaveTemplateModal(false);
+      setTemplateName("");
+    } catch (error) {
+      Alert.alert("Error", "Failed to save template");
+    }
   };
 
   // Handle CSV export
@@ -181,6 +261,18 @@ export default function HomeScreen() {
         exerciseType: exercise.type,
         exerciseSets: JSON.stringify(exercise.sets),
       },
+    });
+  };
+
+  const toggleExerciseCollapsed = (exerciseId: string) => {
+    setCollapsedExerciseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId);
+      } else {
+        next.add(exerciseId);
+      }
+      return next;
     });
   };
 
@@ -245,7 +337,12 @@ export default function HomeScreen() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header: Today's Date - Tappable to reset to today */}
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+        <View
+          style={[
+            styles.header,
+            { borderBottomColor: colors.border, paddingTop: insets.top + 10 },
+          ]}
+        >
           <View style={styles.headerContent}>
             <TouchableOpacity
               onPress={handleDateHeaderTap}
@@ -291,6 +388,7 @@ export default function HomeScreen() {
 
         {/* Exercise List */}
         <ScrollView
+          ref={exerciseListRef}
           style={styles.listContainer}
           showsVerticalScrollIndicator={false}
         >
@@ -318,31 +416,49 @@ export default function HomeScreen() {
                       >
                         {exercise.name}
                       </Text>
-                      <Text
-                        style={[
-                          styles.setCount,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {exercise.sets.length}{" "}
-                        {exercise.sets.length === 1 ? "set" : "sets"}
-                      </Text>
+                      <RNView style={styles.exerciseHeaderRight}>
+                        <Text
+                          style={[
+                            styles.setCount,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {exercise.sets.length}{" "}
+                          {exercise.sets.length === 1 ? "set" : "sets"}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => toggleExerciseCollapsed(exercise.id)}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                          style={styles.collapseToggle}
+                        >
+                          <FontAwesome
+                            name={
+                              collapsedExerciseIds.has(exercise.id)
+                                ? "chevron-down"
+                                : "chevron-up"
+                            }
+                            size={14}
+                            color={colors.textSecondary}
+                          />
+                        </TouchableOpacity>
+                      </RNView>
                     </RNView>
                     {/* Table Layout for Sets */}
+                    {!collapsedExerciseIds.has(exercise.id) && (
                     <RNView style={styles.setsTable}>
                       {/* Table Header */}
                       <RNView style={[styles.tableRow, styles.tableHeader, { borderBottomColor: colors.border }]}>
                         <RNText style={[styles.tableHeaderCell, styles.iconCol, { color: colors.textSecondary }]}></RNText>
-                        {(exercise.type === "weight_reps" || exercise.type === "weight_only") && (
+                        {(exercise.type === "weight_reps" || exercise.type === "weight_distance" || exercise.type === "weight_time" || exercise.type === "weight") && (
                           <RNText style={[styles.tableHeaderCell, styles.dataCol, { color: colors.textSecondary }]}>{weightUnit}</RNText>
                         )}
-                        {(exercise.type === "weight_reps" || exercise.type === "reps_only") && (
+                        {(exercise.type === "weight_reps" || exercise.type === "reps_distance" || exercise.type === "reps_time" || exercise.type === "reps") && (
                           <RNText style={[styles.tableHeaderCell, styles.dataCol, { color: colors.textSecondary }]}>Reps</RNText>
                         )}
-                        {(exercise.type === "distance_time" || exercise.type === "distance_only") && (
+                        {(exercise.type === "distance_time" || exercise.type === "weight_distance" || exercise.type === "reps_distance" || exercise.type === "distance") && (
                           <RNText style={[styles.tableHeaderCell, styles.dataCol, { color: colors.textSecondary }]}>{distanceUnit}</RNText>
                         )}
-                        {(exercise.type === "distance_time" || exercise.type === "time_only") && (
+                        {(exercise.type === "distance_time" || exercise.type === "weight_time" || exercise.type === "reps_time" || exercise.type === "time_duration" || exercise.type === "time_speed") && (
                           <RNText style={[styles.tableHeaderCell, styles.dataCol, { color: colors.textSecondary }]}>Time</RNText>
                         )}
                       </RNView>
@@ -353,22 +469,22 @@ export default function HomeScreen() {
                             {set.isPersonalBest && <Text style={styles.pbIcon}>🏆</Text>}
                             {set.note && <FontAwesome name="sticky-note" size={12} color={colors.tint} />}
                           </RNView>
-                          {(exercise.type === "weight_reps" || exercise.type === "weight_only") && (
+                          {(exercise.type === "weight_reps" || exercise.type === "weight_distance" || exercise.type === "weight_time" || exercise.type === "weight") && (
                             <RNText style={[styles.tableCell, styles.dataCol, { color: colors.text }]}>
                               {set.weight !== undefined ? (weightUnit === "lbs" ? kgToLbs(set.weight).toFixed(1) : set.weight.toFixed(1)) : "—"}
                             </RNText>
                           )}
-                          {(exercise.type === "weight_reps" || exercise.type === "reps_only") && (
+                          {(exercise.type === "weight_reps" || exercise.type === "reps_distance" || exercise.type === "reps_time" || exercise.type === "reps") && (
                             <RNText style={[styles.tableCell, styles.dataCol, { color: colors.text }]}>
                               {set.reps !== undefined ? set.reps : "—"}
                             </RNText>
                           )}
-                          {(exercise.type === "distance_time" || exercise.type === "distance_only") && (
+                          {(exercise.type === "distance_time" || exercise.type === "weight_distance" || exercise.type === "reps_distance" || exercise.type === "distance") && (
                             <RNText style={[styles.tableCell, styles.dataCol, { color: colors.text }]}>
-                              {set.distance !== undefined ? (distanceUnit === "mi" ? kmToMiles(set.distance).toFixed(2) : set.distance.toFixed(2)) : "—"}
+                              {set.distance !== undefined ? (distanceUnit === "miles" ? kmToMiles(set.distance).toFixed(2) : set.distance.toFixed(2)) : "—"}
                             </RNText>
                           )}
-                          {(exercise.type === "distance_time" || exercise.type === "time_only") && (
+                          {(exercise.type === "distance_time" || exercise.type === "weight_time" || exercise.type === "reps_time" || exercise.type === "time_duration" || exercise.type === "time_speed") && (
                             <RNText style={[styles.tableCell, styles.dataCol, { color: colors.text }]}>
                               {set.time !== undefined ? `${Math.floor(set.time / 60)}:${(set.time % 60).toString().padStart(2, '0')}` : "—"}
                             </RNText>
@@ -376,6 +492,7 @@ export default function HomeScreen() {
                         </RNView>
                       ))}
                     </RNView>
+                    )}
                     {/* ORIGINAL PILL LAYOUT - Uncomment to revert
                     <RNView style={styles.setsPreview}>
                       {exercise.sets.map((set) => (
@@ -469,7 +586,75 @@ export default function HomeScreen() {
                 { backgroundColor: colors.border },
               ]}
             />
-            
+
+            <TouchableOpacity
+              style={[styles.menuItem, { backgroundColor: `${colors.tint}15` }]}
+              onPress={navigateToManageExercises}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.menuItemText, { color: colors.tint }]}>
+                Manage Exercises
+              </Text>
+            </TouchableOpacity>
+
+            <View
+              style={[
+                styles.menuDivider,
+                { backgroundColor: colors.border },
+              ]}
+            />
+
+            <TouchableOpacity
+              style={[styles.menuItem, { backgroundColor: `${colors.tint}15` }]}
+              onPress={handleOpenSaveTemplate}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.menuItemText, { color: colors.tint }]}>
+                Save as Template...
+              </Text>
+            </TouchableOpacity>
+
+            <View
+              style={[
+                styles.menuDivider,
+                { backgroundColor: colors.border },
+              ]}
+            />
+
+            <TouchableOpacity
+              style={[styles.menuItem, { backgroundColor: `${colors.tint}15` }]}
+              onPress={navigateToTemplates}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.menuItemText, { color: colors.tint }]}>
+                Load Template...
+              </Text>
+            </TouchableOpacity>
+
+            <View
+              style={[
+                styles.menuDivider,
+                { backgroundColor: colors.border },
+              ]}
+            />
+
+            <TouchableOpacity
+              style={[styles.menuItem, { backgroundColor: `${colors.tint}15` }]}
+              onPress={navigateToBodyMeasurements}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.menuItemText, { color: colors.tint }]}>
+                Body Measurements
+              </Text>
+            </TouchableOpacity>
+
+            <View
+              style={[
+                styles.menuDivider,
+                { backgroundColor: colors.border },
+              ]}
+            />
+
             <TouchableOpacity
               style={[styles.menuItem, { backgroundColor: `${colors.tint}15` }]}
               onPress={navigateToSettings}
@@ -491,6 +676,74 @@ export default function HomeScreen() {
             </Text>
           </View>
         )}
+
+        {/* Save as Template Modal */}
+        <Modal
+          visible={showSaveTemplateModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowSaveTemplateModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.noteModalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowSaveTemplateModal(false)}
+          >
+            <View
+              style={[
+                styles.noteModalContent,
+                { backgroundColor: colors.surface },
+              ]}
+              onStartShouldSetResponder={() => true}
+            >
+              <Text style={[styles.noteModalTitle, { color: colors.text }]}>
+                Save as Template
+              </Text>
+              <TextInput
+                style={[
+                  styles.templateNameInput,
+                  {
+                    color: colors.text,
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
+                ]}
+                placeholder="e.g., Push Day"
+                placeholderTextColor={colors.textSecondary}
+                value={templateName}
+                onChangeText={setTemplateName}
+                maxLength={50}
+                autoFocus
+              />
+              <View style={styles.noteModalButtons}>
+                <TouchableOpacity
+                  style={[
+                    styles.noteModalButton,
+                    { backgroundColor: colors.border },
+                  ]}
+                  onPress={() => setShowSaveTemplateModal(false)}
+                >
+                  <Text
+                    style={[styles.noteModalButtonText, { color: colors.text }]}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.noteModalButton,
+                    { backgroundColor: colors.tint },
+                  ]}
+                  onPress={handleSaveTemplate}
+                >
+                  <Text style={[styles.noteModalButtonText, { color: "#fff" }]}>
+                    Save
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </View>
     </GestureHandlerRootView>
   );
@@ -550,6 +803,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     opacity: 0.7,
+  },
+  exerciseHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "transparent",
+  },
+  collapseToggle: {
+    padding: 2,
   },
   setsPreview: {
     flexDirection: "row",
@@ -780,5 +1042,47 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     gap: 4,
+  },
+  // Save as Template modal
+  noteModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  noteModalContent: {
+    width: "90%",
+    maxWidth: 400,
+    borderRadius: 16,
+    padding: 20,
+  },
+  noteModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  templateNameInput: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  noteModalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  noteModalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  noteModalButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

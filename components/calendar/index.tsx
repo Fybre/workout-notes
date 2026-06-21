@@ -11,6 +11,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Text } from "@/components/Themed";
 import { useTheme } from "@/contexts/ThemeContext";
 import Colors from "@/constants/Colors";
+import { getToday } from "@/utils/date";
 import type { ViewMode } from "./types";
 import { useCalendarData } from "./hooks/useCalendarData";
 import { CalendarView } from "./CalendarView";
@@ -59,9 +60,11 @@ export default function CalendarScreen() {
   } = useCalendarData();
 
   const onDayPress = useCallback((day: { dateString: string }) => {
-    // Navigate back to home screen with the selected date
-    router.navigate({
-      pathname: "/",
+    // Dismiss back to the existing home screen instance with the selected
+    // date, rather than pushing a new one on top (navigate() here left a
+    // duplicate "(tabs)" screen stacked underneath, visible on swipe-down)
+    router.dismissTo({
+      pathname: "/(tabs)",
       params: { date: day.dateString },
     });
   }, [router]);
@@ -75,12 +78,28 @@ export default function CalendarScreen() {
     router.back();
   }, [router]);
 
+  const goToToday = useCallback(() => {
+    // Dismiss back to the existing home screen instance with today's date
+    router.dismissTo({
+      pathname: "/(tabs)",
+      params: { date: getToday() },
+    });
+  }, [router]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={closeCalendar} style={styles.backButton}>
             <FontAwesome name="chevron-left" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={goToToday}
+            style={[styles.todayButton, { borderColor: colors.tint }]}
+          >
+            <Text style={[styles.todayButtonText, { color: colors.tint }]}>
+              Today
+            </Text>
           </TouchableOpacity>
         </View>
         <View style={styles.viewSwitch}>
@@ -133,15 +152,19 @@ export default function CalendarScreen() {
           colors={colors}
           onToggleEmptyDays={toggleEmptyDays}
           onSelectDate={(date) => {
-            router.navigate({
-              pathname: "/",
+            // Dismiss back to the existing home screen instance instead of
+            // pushing a new one (see onDayPress above)
+            router.dismissTo({
+              pathname: "/(tabs)",
               params: { date },
             });
           }}
           onExercisePress={(exercise) => {
-            // Navigate to home with the date, then open enter-exercise
-            router.navigate({
-              pathname: "/",
+            // Dismiss back to the existing home screen instance, then push
+            // enter-exercise on top of it - leaves a clean 2-screen stack
+            // instead of stacking a duplicate home screen underneath
+            router.dismissTo({
+              pathname: "/(tabs)",
               params: { date: exercise.date },
             });
             // Small delay to ensure navigation completes before opening modal
@@ -199,11 +222,22 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   backButton: {
     padding: 8,
     marginLeft: -8,
+  },
+  todayButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1.5,
+  },
+  todayButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   viewSwitch: {
     flexDirection: "row",

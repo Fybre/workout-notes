@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Voice recognition - gracefully handle if module isn't available
 let ExpoSpeechRecognitionModule: any;
@@ -28,6 +29,7 @@ try {
 
 import Celebration from "@/components/Celebration";
 import EditSetModal from "@/components/EditSetModal";
+import { ExerciseInfoModal } from "@/components/ExerciseInfoModal";
 import RestTimerModal from "@/components/RestTimerModal";
 import { Text, View } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
@@ -42,6 +44,7 @@ import {
   getExerciseHistoryWithSets,
   getLastExerciseByName,
   getPersonalBestForExercise,
+  setExerciseFavourite,
   updateSet,
 } from "@/db/database";
 import type { ExerciseType, Set } from "@/types/workout";
@@ -93,6 +96,7 @@ export default function EnterWorkoutScreen() {
   }>();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const insets = useSafeAreaInsets();
 
   // Get user's unit preference
   const { weightUnit, distanceUnit, weightIncrement } = useUnits();
@@ -141,6 +145,14 @@ export default function EnterWorkoutScreen() {
   const [exerciseDescription, setExerciseDescription] = useState<string | null>(
     null,
   );
+  const [exerciseMediaUri, setExerciseMediaUri] = useState<string | null>(null);
+  const [exerciseMediaType, setExerciseMediaType] = useState<
+    "image" | "video" | null
+  >(null);
+  const [exerciseDefinitionId, setExerciseDefinitionId] = useState<
+    string | null
+  >(null);
+  const [exerciseIsFavourite, setExerciseIsFavourite] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [exerciseHistory, setExerciseHistory] = useState<
     { date: string; sets: Set[] }[]
@@ -235,6 +247,12 @@ export default function EnterWorkoutScreen() {
       if (exerciseName) {
         const definition = await getExerciseDefinitionByName(exerciseName);
         setExerciseDescription(definition?.description || null);
+        setExerciseMediaUri(definition?.mediaUri || null);
+        setExerciseMediaType(
+          (definition?.mediaType as "image" | "video" | null) || null,
+        );
+        setExerciseDefinitionId(definition?.id || null);
+        setExerciseIsFavourite(!!definition?.isFavourite);
       }
     };
 
@@ -441,19 +459,24 @@ export default function EnterWorkoutScreen() {
     }
   };
 
-  const handleClose = () => {
-    // If we came from select-exercise screen and no sets were added, go back to select-exercise
-    // Otherwise, go back to home screen
-    if (!paramExerciseId && sets.length === 0) {
-      // Came from select-exercise and no sets added - go back to select-exercise
+  // If we came from select-exercise screen and no sets were added, go back to
+  // select-exercise. Otherwise, go back to home screen (dismissing to the
+  // existing instance rather than pushing/replacing a new one)
+  const navigateToParent = (remainingSets: WorkoutSet[]) => {
+    if (!paramExerciseId && remainingSets.length === 0) {
       router.back();
     } else {
-      // Either came from home screen or sets were added - go to home screen with the same date
-      router.replace({
+      router.dismissTo({
         pathname: "/(tabs)",
         params: { date: exerciseDate },
       });
     }
+  };
+
+  // "Done" closes and saves - sets are already persisted as they're added,
+  // so this is just navigation, no confirmation needed
+  const handleDone = () => {
+    navigateToParent(sets);
   };
 
   // Parse voice input for weight, reps, and notes
@@ -798,6 +821,7 @@ export default function EnterWorkoutScreen() {
           {
             backgroundColor: colors.background,
             borderBottomColor: colors.border,
+            paddingTop: insets.top + 16,
           },
         ]}
       >
@@ -811,7 +835,10 @@ export default function EnterWorkoutScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          {(exerciseDescription || exerciseHistory.length > 0) && (
+          {(exerciseDescription ||
+            exerciseMediaUri ||
+            exerciseIsFavourite ||
+            exerciseHistory.length > 0) && (
             <TouchableOpacity
               onPress={async () => {
                 // Load exercise history when opening modal
@@ -859,21 +886,12 @@ export default function EnterWorkoutScreen() {
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            onPress={() => {
-              setAutoStartTimer(false);
-              setShowRestTimer(true);
-            }}
-            style={styles.stopwatchButton}
-            activeOpacity={0.7}
+            onPress={handleDone}
+            style={[styles.doneButton, { borderColor: colors.tint }]}
           >
-            <FontAwesome
-              name={restTimerSettings.autoStart ? "bell" : "bell-o"}
-              size={24}
-              color={colors.tint}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Text style={[styles.closeText, { color: colors.tint }]}>✕</Text>
+            <Text style={[styles.doneText, { color: colors.tint }]}>
+              Done
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1204,6 +1222,33 @@ export default function EnterWorkoutScreen() {
             </Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[
+              styles.noteButton,
+              {
+                backgroundColor: restTimerSettings.autoStart
+                  ? `${colors.tint}30`
+                  : colors.surface,
+                borderColor: restTimerSettings.autoStart
+                  ? colors.tint
+                  : colors.border,
+              },
+            ]}
+            onPress={() => {
+              setAutoStartTimer(false);
+              setShowRestTimer(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <FontAwesome
+              name={restTimerSettings.autoStart ? "bell" : "bell-o"}
+              size={24}
+              color={
+                restTimerSettings.autoStart ? colors.tint : colors.textSecondary
+              }
+            />
+          </TouchableOpacity>
+
           {voiceRecognitionAvailable && (
             <TouchableOpacity
               style={[
@@ -1345,161 +1390,29 @@ export default function EnterWorkoutScreen() {
       />
 
       {/* Exercise Info Modal */}
-      <Modal
+      <ExerciseInfoModal
         visible={showInfoModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowInfoModal(false)}
-      >
-        <View
-          style={[
-            styles.infoModalOverlay,
-            { backgroundColor: "rgba(0,0,0,0.5)" },
-          ]}
-        >
-          <View
-            style={[
-              styles.infoModalContent,
-              { backgroundColor: colors.background },
-            ]}
-          >
-            {/* Modal Header */}
-            <View
-              style={[
-                styles.infoModalHeader,
-                { borderBottomColor: colors.border },
-              ]}
-            >
-              <Text style={[styles.infoModalTitle, { color: colors.text }]}>
-                {exerciseName}
-              </Text>
-              <TouchableOpacity onPress={() => setShowInfoModal(false)}>
-                <Text style={[styles.closeText, { color: colors.tint }]}>
-                  ✕
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              style={styles.infoModalScroll}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Description Section */}
-              {exerciseDescription && (
-                <View
-                  style={[
-                    styles.descriptionSection,
-                    { borderBottomColor: colors.border },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.descriptionLabel,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Description
-                  </Text>
-                  <Text
-                    style={[styles.descriptionText, { color: colors.text }]}
-                  >
-                    {exerciseDescription}
-                  </Text>
-                </View>
-              )}
-
-              {/* Estimated 1RM Section */}
-              {exerciseType === "weight_reps" && estimatedOneRM !== null && (
-                <View
-                  style={[
-                    styles.oneRMSection,
-                    { borderBottomColor: colors.border },
-                  ]}
-                >
-                  <Text
-                    style={[styles.oneRMLabel, { color: colors.textSecondary }]}
-                  >
-                    Estimated 1 Rep Max
-                  </Text>
-                  <Text style={[styles.oneRMValue, { color: colors.tint }]}>
-                    {formatOneRepMax(estimatedOneRM, weightUnit)}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.oneRMDisclaimer,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    Based on your best set using the Epley formula
-                  </Text>
-                </View>
-              )}
-
-              {/* History Section */}
-              <View style={styles.historySection}>
-                <Text
-                  style={[styles.historyLabel, { color: colors.textSecondary }]}
-                >
-                  History
-                </Text>
-                {exerciseHistory.length === 0 ? (
-                  <Text
-                    style={[
-                      styles.noHistoryText,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    No history yet. Complete your first workout!
-                  </Text>
-                ) : (
-                  exerciseHistory.map((entry, index) => (
-                    <View
-                      key={entry.date}
-                      style={[
-                        styles.historyEntry,
-                        index < exerciseHistory.length - 1 && {
-                          borderBottomColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[styles.historyDate, { color: colors.tint }]}
-                      >
-                        {entry.date}
-                      </Text>
-                      <View style={styles.historySets}>
-                        {entry.sets.map((set, setIndex) => (
-                          <View key={set.id} style={styles.historySetRow}>
-                            <Text
-                              style={[
-                                styles.historySetNumber,
-                                { color: colors.textSecondary },
-                              ]}
-                            >
-                              Set {setIndex + 1}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.historySetData,
-                                { color: colors.text },
-                              ]}
-                            >
-                              {formatSetForDisplay(exerciseType, set, {
-                                weightUnit,
-                                distanceUnit,
-                              })}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  ))
-                )}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowInfoModal(false)}
+        exerciseName={exerciseName ?? ""}
+        exerciseType={exerciseType}
+        description={exerciseDescription}
+        mediaUri={exerciseMediaUri}
+        mediaType={exerciseMediaType}
+        history={exerciseHistory}
+        estimatedOneRM={estimatedOneRM}
+        weightUnit={weightUnit}
+        distanceUnit={distanceUnit}
+        isFavourite={exerciseIsFavourite}
+        onToggleFavourite={
+          exerciseDefinitionId
+            ? async () => {
+                const next = !exerciseIsFavourite;
+                setExerciseIsFavourite(next);
+                await setExerciseFavourite(exerciseDefinitionId, next);
+              }
+            : undefined
+        }
+      />
 
       {/* Note Input Modal */}
       <Modal
@@ -1608,7 +1521,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
@@ -1630,17 +1542,15 @@ const styles = StyleSheet.create({
   infoButton: {
     padding: 8,
   },
-  stopwatchButton: {
-    padding: 8,
+  doneButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
   },
-  closeButton: {
-    padding: 8,
-    marginRight: -8,
-  },
-  closeText: {
-    fontSize: 28,
-    fontWeight: "400",
-    lineHeight: 32,
+  doneText: {
+    fontSize: 16,
+    fontWeight: "700",
   },
   content: {
     flex: 1,
@@ -1775,113 +1685,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     backgroundColor: "transparent",
-  },
-  // Info Modal Styles
-  infoModalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  infoModalContent: {
-    height: "100%",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  infoModalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  infoModalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  infoModalScroll: {
-    flex: 1,
-  },
-  descriptionSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  descriptionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    marginBottom: 8,
-    letterSpacing: 0.5,
-  },
-  descriptionText: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  historySection: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  historyLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    marginBottom: 12,
-    letterSpacing: 0.5,
-  },
-  noHistoryText: {
-    fontSize: 15,
-    fontStyle: "italic",
-    textAlign: "center",
-    paddingVertical: 20,
-  },
-  historyEntry: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  historyDate: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  historySets: {
-    gap: 4,
-  },
-  historySetRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 2,
-  },
-  historySetNumber: {
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  historySetData: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  // 1RM Section Styles
-  oneRMSection: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    alignItems: "center",
-  },
-  oneRMLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  oneRMValue: {
-    fontSize: 36,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  oneRMDisclaimer: {
-    fontSize: 12,
-    fontStyle: "italic",
   },
   setDataRow: {
     flexDirection: "row",
