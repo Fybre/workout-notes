@@ -1,7 +1,7 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -234,31 +234,36 @@ export default function EnterWorkoutScreen() {
   }, []);
 
   // Fetch personal best and exercise description for this exercise
-  useEffect(() => {
-    const fetchPersonalBest = async () => {
-      if (exerciseName) {
-        // Don't exclude today - we want to show the overall PB including today's sets
-        const pb = await getPersonalBestForExercise(exerciseName);
-        setPersonalBest(pb);
-      }
-    };
+  // Re-runs on every focus (not just when exerciseName/today change) so
+  // editing the exercise (photo, description, etc.) and coming back shows
+  // the update immediately instead of needing to back out further
+  useFocusEffect(
+    useCallback(() => {
+      const fetchPersonalBest = async () => {
+        if (exerciseName) {
+          // Don't exclude today - we want to show the overall PB including today's sets
+          const pb = await getPersonalBestForExercise(exerciseName);
+          setPersonalBest(pb);
+        }
+      };
 
-    const fetchExerciseDescription = async () => {
-      if (exerciseName) {
-        const definition = await getExerciseDefinitionByName(exerciseName);
-        setExerciseDescription(definition?.description || null);
-        setExerciseMediaUri(definition?.mediaUri || null);
-        setExerciseMediaType(
-          (definition?.mediaType as "image" | "video" | null) || null,
-        );
-        setExerciseDefinitionId(definition?.id || null);
-        setExerciseIsFavourite(!!definition?.isFavourite);
-      }
-    };
+      const fetchExerciseDescription = async () => {
+        if (exerciseName) {
+          const definition = await getExerciseDefinitionByName(exerciseName);
+          setExerciseDescription(definition?.description || null);
+          setExerciseMediaUri(definition?.mediaUri || null);
+          setExerciseMediaType(
+            (definition?.mediaType as "image" | "video" | null) || null,
+          );
+          setExerciseDefinitionId(definition?.id || null);
+          setExerciseIsFavourite(!!definition?.isFavourite);
+        }
+      };
 
-    fetchPersonalBest();
-    fetchExerciseDescription();
-  }, [exerciseName, today]);
+      fetchPersonalBest();
+      fetchExerciseDescription();
+    }, [exerciseName, today]),
+  );
 
   const handleAddSet = async () => {
     // Validate based on exercise type
@@ -1393,6 +1398,7 @@ export default function EnterWorkoutScreen() {
       <ExerciseInfoModal
         visible={showInfoModal}
         onClose={() => setShowInfoModal(false)}
+        exerciseId={exerciseDefinitionId ?? undefined}
         exerciseName={exerciseName ?? ""}
         exerciseType={exerciseType}
         description={exerciseDescription}

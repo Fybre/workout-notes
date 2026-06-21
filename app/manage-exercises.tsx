@@ -1,6 +1,6 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
   View as RNView,
@@ -47,6 +47,9 @@ export default function ManageExercisesScreen() {
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
     new Set(),
   );
+  // Tracks which categories we've already defaulted to collapsed, so
+  // reloading the list doesn't re-collapse a category the user expanded
+  const seenCategoriesRef = useRef<Set<string>>(new Set());
 
   // Bulk category change state
   const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
@@ -74,6 +77,19 @@ export default function ManageExercisesScreen() {
         })),
       );
       setCategories(cats);
+
+      // Default every category to collapsed the first time it's seen, but
+      // leave the user's own expand/collapse choices alone after that
+      setCollapsedCategories((prev) => {
+        const next = new Set(prev);
+        for (const cat of cats) {
+          if (!seenCategoriesRef.current.has(cat)) {
+            next.add(cat);
+            seenCategoriesRef.current.add(cat);
+          }
+        }
+        return next;
+      });
     } catch (error) {
       Alert.alert("Error", "Failed to load exercises");
     }

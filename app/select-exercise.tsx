@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   SectionList,
@@ -137,43 +137,46 @@ export default function SelectExerciseScreen() {
     savePreference();
   }, [showOnlyUsed]);
 
-  // Load exercise data and used exercise IDs
-  useEffect(() => {
-    if (!dbReady) return;
+  // Load exercise data and used exercise IDs - re-runs every time the screen
+  // regains focus (e.g. returning from "+ Add Exercise") so newly added or
+  // edited exercises show up without needing to back out and re-enter
+  useFocusEffect(
+    useCallback(() => {
+      if (!dbReady) return;
 
-    const loadExerciseData = async () => {
-      try {
-        setLoading(true);
-        const [definitions, usedIds, recentIds] = await Promise.all([
-          getAllExerciseDefinitions(),
-          getUsedExerciseIds(),
-          getRecentExerciseDefinitionIds(RECENT_EXERCISES_LIMIT),
-        ]);
+      const loadExerciseData = async () => {
+        try {
+          const [definitions, usedIds, recentIds] = await Promise.all([
+            getAllExerciseDefinitions(),
+            getUsedExerciseIds(),
+            getRecentExerciseDefinitionIds(RECENT_EXERCISES_LIMIT),
+          ]);
 
-        const exercises: ExerciseItem[] = definitions.map((def) => ({
-          id: def.id,
-          name: def.name,
-          type: def.type as ExerciseType,
-          category: def.category,
-          description: def.description,
-          mediaUri: def.mediaUri,
-          mediaType: def.mediaType as "image" | "video" | null,
-          isFavourite: !!def.isFavourite,
-        }));
+          const exercises: ExerciseItem[] = definitions.map((def) => ({
+            id: def.id,
+            name: def.name,
+            type: def.type as ExerciseType,
+            category: def.category,
+            description: def.description,
+            mediaUri: def.mediaUri,
+            mediaType: def.mediaType as "image" | "video" | null,
+            isFavourite: !!def.isFavourite,
+          }));
 
-        setAllExercises(exercises);
-        setUsedExerciseIds(usedIds);
-        setRecentExerciseIds(recentIds);
-      } catch (err) {
+          setAllExercises(exercises);
+          setUsedExerciseIds(usedIds);
+          setRecentExerciseIds(recentIds);
+        } catch (err) {
 
-        setError("Failed to load exercises");
-      } finally {
-        setLoading(false);
-      }
-    };
+          setError("Failed to load exercises");
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    loadExerciseData();
-  }, [dbReady]);
+      loadExerciseData();
+    }, [dbReady]),
+  );
 
   // Filter and group exercises based on search query, used toggle, and category
   const exerciseData = useMemo((): ExerciseSection[] => {
@@ -564,6 +567,7 @@ export default function SelectExerciseScreen() {
         <ExerciseInfoModal
           visible={showInfoModal}
           onClose={() => setShowInfoModal(false)}
+          exerciseId={infoExercise.id}
           exerciseName={infoExercise.name}
           exerciseType={infoExercise.type}
           description={infoExercise.description}

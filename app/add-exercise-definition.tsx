@@ -205,6 +205,48 @@ export default function AddExerciseDefinitionScreen() {
     }
   };
 
+  // Saves the currently-shown (possibly edited) details as a brand new
+  // exercise definition, then opens that new copy for further editing.
+  // Media isn't carried over - deleting either exercise would otherwise
+  // delete the shared file out from under the other one.
+  const handleSaveCopy = async () => {
+    if (!exercise.name.trim()) {
+      Alert.alert("Error", "Exercise name is required");
+      return;
+    }
+
+    const finalCategory = isCustomCategory ? customCategory.trim() : exercise.category;
+    if (!finalCategory) {
+      Alert.alert("Error", "Category is required");
+      return;
+    }
+
+    const newId = generateId();
+    try {
+      await addExerciseDefinition({
+        id: newId,
+        name: `Copy of ${exercise.name}`,
+        category: finalCategory,
+        type: exercise.type,
+        unit: exercise.unit,
+        description: exercise.description || undefined,
+      });
+      router.push({
+        pathname: "/add-exercise-definition",
+        params: { id: newId },
+      });
+    } catch (error) {
+      Alert.alert("Error", "Failed to save a copy");
+    }
+  };
+
+  const handleMenuPress = () => {
+    Alert.alert(exercise.name || "Exercise", undefined, [
+      { text: "Save a Copy", onPress: handleSaveCopy },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
   const getUnitsForType = (type: ExerciseType = exercise.type) => {
     if (type.includes("weight") && !type.includes("distance")) {
       return ["kg", "lbs"];
@@ -264,11 +306,18 @@ export default function AddExerciseDefinitionScreen() {
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           {exercise.id ? "Edit Exercise" : "Add Exercise"}
         </Text>
-        <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-          <Text style={[styles.saveButtonText, { color: colors.tint }]}>
-            Save
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          {exercise.id && (
+            <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton}>
+              <FontAwesome name="ellipsis-v" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+            <Text style={[styles.saveButtonText, { color: colors.tint }]}>
+              Save
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {isLoading ? (
@@ -515,6 +564,14 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "400",
     lineHeight: 32,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  menuButton: {
+    padding: 8,
   },
   saveButton: {
     padding: 8,

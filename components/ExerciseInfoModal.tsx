@@ -4,7 +4,9 @@
  */
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { ResizeMode, Video } from "expo-av";
+import { useRouter } from "expo-router";
 import {
+  Alert,
   Image,
   Modal,
   ScrollView,
@@ -22,6 +24,7 @@ import { formatOneRepMax, formatSetForDisplay } from "@/utils/format";
 interface ExerciseInfoModalProps {
   visible: boolean;
   onClose: () => void;
+  exerciseId?: string;
   exerciseName: string;
   exerciseType: ExerciseType;
   description: string | null;
@@ -38,6 +41,7 @@ interface ExerciseInfoModalProps {
 export function ExerciseInfoModal({
   visible,
   onClose,
+  exerciseId,
   exerciseName,
   exerciseType,
   description,
@@ -50,9 +54,26 @@ export function ExerciseInfoModal({
   isFavourite,
   onToggleFavourite,
 }: ExerciseInfoModalProps) {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
+
+  const handleMenuPress = () => {
+    Alert.alert(exerciseName, undefined, [
+      {
+        text: "Edit Exercise",
+        onPress: () => {
+          onClose();
+          router.push({
+            pathname: "/add-exercise-definition",
+            params: { id: exerciseId },
+          });
+        },
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
 
   return (
     <Modal
@@ -79,6 +100,15 @@ export function ExerciseInfoModal({
               {exerciseName}
             </Text>
             <View style={styles.headerActions}>
+              {exerciseId && (
+                <TouchableOpacity onPress={handleMenuPress} hitSlop={12}>
+                  <FontAwesome
+                    name="ellipsis-v"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              )}
               {onToggleFavourite && (
                 <TouchableOpacity onPress={onToggleFavourite} hitSlop={12}>
                   <FontAwesome
