@@ -201,8 +201,14 @@ export default function EnterWorkoutScreen() {
       }
 
       // Case 3: New exercise - look up last time this exercise was done
+      // (excluding the date we're actually filling in, not literal "today" -
+      // otherwise adding an exercise for a future/past date would wrongly
+      // exclude today's own history from the lookup)
       if (exerciseName) {
-        const lastExercise = await getLastExerciseByName(exerciseName, today);
+        const lastExercise = await getLastExerciseByName(
+          exerciseName,
+          exerciseDate,
+        );
 
         if (lastExercise && lastExercise.sets.length > 0) {
           // Use the FIRST set from the last session
@@ -217,7 +223,7 @@ export default function EnterWorkoutScreen() {
     };
 
     populateFromHistory();
-  }, [exerciseName, paramSets, today]);
+  }, [exerciseName, paramSets, exerciseDate]);
 
   // Load rest timer settings
   useEffect(() => {
@@ -891,6 +897,22 @@ export default function EnterWorkoutScreen() {
             </TouchableOpacity>
           )}
           <TouchableOpacity
+            onPress={() => {
+              setAutoStartTimer(false);
+              setShowRestTimer(true);
+            }}
+            style={styles.infoButton}
+            activeOpacity={0.7}
+          >
+            <FontAwesome
+              name={restTimerSettings.autoStart ? "bell" : "bell-o"}
+              size={24}
+              color={
+                restTimerSettings.autoStart ? colors.tint : colors.textSecondary
+              }
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={handleDone}
             style={[styles.doneButton, { borderColor: colors.tint }]}
           >
@@ -944,6 +966,7 @@ export default function EnterWorkoutScreen() {
                 >
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
+                    hitSlop={8}
                     onPress={() => {
                       const currentDisplay =
                         weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
@@ -997,6 +1020,7 @@ export default function EnterWorkoutScreen() {
 
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
+                    hitSlop={8}
                     onPress={() => {
                       const currentDisplay =
                         weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
@@ -1023,6 +1047,7 @@ export default function EnterWorkoutScreen() {
                 >
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
+                    hitSlop={8}
                     onPress={() => setReps(Math.max(0, reps - REPS_INCREMENT))}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
@@ -1058,6 +1083,7 @@ export default function EnterWorkoutScreen() {
 
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
+                    hitSlop={8}
                     onPress={() => setReps(reps + REPS_INCREMENT)}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
@@ -1079,6 +1105,7 @@ export default function EnterWorkoutScreen() {
                 >
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
+                    hitSlop={8}
                     onPress={() => setDistance(Math.max(0, distance - 0.5))}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
@@ -1114,6 +1141,7 @@ export default function EnterWorkoutScreen() {
 
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
+                    hitSlop={8}
                     onPress={() => setDistance(distance + 0.5)}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
@@ -1135,6 +1163,7 @@ export default function EnterWorkoutScreen() {
                 >
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
+                    hitSlop={8}
                     onPress={() => setTime(Math.max(0, time - 30))}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
@@ -1170,6 +1199,7 @@ export default function EnterWorkoutScreen() {
 
                   <TouchableOpacity
                     style={[styles.button, { borderColor: colors.tint }]}
+                    hitSlop={8}
                     onPress={() => setTime(time + 30)}
                   >
                     <Text style={[styles.buttonText, { color: colors.tint }]}>
@@ -1225,33 +1255,6 @@ export default function EnterWorkoutScreen() {
             <Text style={[styles.addSetButtonText, { color: "#ffffff" }]}>
               Add Set
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.noteButton,
-              {
-                backgroundColor: restTimerSettings.autoStart
-                  ? `${colors.tint}30`
-                  : colors.surface,
-                borderColor: restTimerSettings.autoStart
-                  ? colors.tint
-                  : colors.border,
-              },
-            ]}
-            onPress={() => {
-              setAutoStartTimer(false);
-              setShowRestTimer(true);
-            }}
-            activeOpacity={0.7}
-          >
-            <FontAwesome
-              name={restTimerSettings.autoStart ? "bell" : "bell-o"}
-              size={24}
-              color={
-                restTimerSettings.autoStart ? colors.tint : colors.textSecondary
-              }
-            />
           </TouchableOpacity>
 
           {voiceRecognitionAvailable && (
@@ -1564,12 +1567,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   inputSection: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 4,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     opacity: 0.7,
@@ -1577,10 +1580,10 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 16,
+    borderRadius: 14,
     paddingHorizontal: 8,
     gap: 16,
-    height: 72,
+    height: 52,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -1591,17 +1594,17 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   button: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
   },
   buttonText: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "300",
-    lineHeight: 28,
+    lineHeight: 22,
   },
   numberField: {
     flex: 1,
@@ -1609,7 +1612,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   numberText: {
-    fontSize: 36,
+    fontSize: 26,
     fontWeight: "700",
     letterSpacing: -1,
   },
@@ -1620,7 +1623,7 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   visibleInput: {
-    fontSize: 36,
+    fontSize: 26,
     fontWeight: "700",
     letterSpacing: -1,
     textAlign: "center",
@@ -1629,8 +1632,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addSetButton: {
-    height: 60,
-    borderRadius: 30,
+    height: 52,
+    borderRadius: 26,
     justifyContent: "center",
     alignItems: "center",
     marginVertical: 12,
@@ -1711,17 +1714,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   voiceButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
   },
   noteButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 52,
+    height: 52,
+    borderRadius: 14,
     borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",

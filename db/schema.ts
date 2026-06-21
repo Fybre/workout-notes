@@ -6,7 +6,7 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
 // Current schema version - increment when making schema changes
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 // Migration function type
 export type Migration = {
@@ -131,6 +131,18 @@ export const migrations: Migration[] = [
         );
 
         CREATE INDEX IF NOT EXISTS idx_body_measurements_date ON body_measurements(date);
+      `);
+    },
+  },
+  {
+    version: 7,
+    name: "Add composite index on exercises(definitionId, date)",
+    up: async (db) => {
+      // exercises(definitionId) had no index at all - every per-exercise
+      // history/PB/template query was a full table scan. The composite
+      // index also covers "WHERE definitionId = ? ORDER BY date" directly.
+      await db.execAsync(`
+        CREATE INDEX IF NOT EXISTS idx_exercises_definitionId_date ON exercises(definitionId, date);
       `);
     },
   },

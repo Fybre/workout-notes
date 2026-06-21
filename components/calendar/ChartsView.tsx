@@ -14,7 +14,7 @@ import { formatDisplayDate } from "@/utils/date";
 import type { ThemeColors } from "./types";
 import type { ExerciseType, Set } from "@/types/workout";
 import type { ChartExercise, ChartDataPoint, ChartPeriod, ChartMetric } from "./types";
-import { PERIOD_DAYS } from "./types";
+import { MAX_CHART_EXERCISES, PERIOD_DAYS } from "./types";
 import { ExercisePickerModal } from "./ExercisePickerModal";
 
 const screenWidth = Dimensions.get("window").width;
@@ -232,7 +232,7 @@ export function ChartsView({
                 <Text style={[styles.clearChipText, { color: colors.error }]}>Clear</Text>
               </TouchableOpacity>
             )}
-            {selectedExercises.length < 5 && (
+            {selectedExercises.length < MAX_CHART_EXERCISES && (
               <TouchableOpacity style={[styles.addChipInline, { borderColor: colors.tint }]} onPress={() => onToggleExercisePicker(true)}>
                 <Text style={[styles.addChipText, { color: colors.tint }]}>+ Add</Text>
               </TouchableOpacity>
@@ -337,6 +337,7 @@ export function ChartsView({
         selectedExercises={selectedExercises}
         colors={colors}
         onSelect={onAddExercise}
+        onRemove={onRemoveExercise}
         onClose={() => onToggleExercisePicker(false)}
       />
     </ScrollView>

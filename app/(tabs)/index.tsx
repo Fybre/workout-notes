@@ -265,6 +265,7 @@ export default function HomeScreen() {
         exerciseId: exercise.id,
         exerciseType: exercise.type,
         exerciseSets: JSON.stringify(exercise.sets),
+        date,
       },
     });
   };

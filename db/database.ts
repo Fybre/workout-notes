@@ -80,6 +80,7 @@ const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_exercise_definitions_name ON exercise_definitions(name);
   CREATE INDEX IF NOT EXISTS idx_template_exercises_templateId ON template_exercises(templateId);
   CREATE INDEX IF NOT EXISTS idx_body_measurements_date ON body_measurements(date);
+  CREATE INDEX IF NOT EXISTS idx_exercises_definitionId_date ON exercises(definitionId, date);
 `;
 
 // Called by SQLiteProvider's onInit - receives the managed database instance
@@ -1045,7 +1046,10 @@ export async function getExerciseHistoryWithSets(
     return [];
   }
 
-  // Get all exercises with their sets, ordered by date descending
+  // Only fetch sets for the most recent `limit` distinct dates, rather than
+  // every set ever logged for this exercise (the LIMIT used to be applied
+  // in JS after fetching the full history, which scales with the exercise's
+  // entire lifetime rather than what's actually shown)
   const results = await db.getAllAsync<{
     date: string;
     set_id: string;
@@ -1060,8 +1064,14 @@ export async function getExerciseHistoryWithSets(
      FROM exercises e
      JOIN sets s ON e.id = s.exerciseId
      WHERE e.definitionId = ?
+       AND e.date IN (
+         SELECT DISTINCT date FROM exercises
+         WHERE definitionId = ?
+         ORDER BY date DESC
+         LIMIT ?
+       )
      ORDER BY e.date DESC, s.timestamp ASC`,
-    [definition.id],
+    [definition.id, definition.id, limit],
   );
 
   // Group by date

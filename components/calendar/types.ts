@@ -42,6 +42,9 @@ export interface ChartDataPoint {
   setCount: number;
 }
 
+// Cap selections to keep the chart legible and to stay within CHART_COLORS
+export const MAX_CHART_EXERCISES = 5;
+
 export const CHART_COLORS = [
   "#FF6B6B", // Red
   "#4ECDC4", // Teal

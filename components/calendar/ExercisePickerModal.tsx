@@ -1,12 +1,13 @@
 /**
  * Exercise Picker Modal
- * Allows selecting exercises for chart display
+ * Allows selecting multiple exercises for chart display
  */
 
 import { Modal, ScrollView, TouchableOpacity, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/Themed";
 import type { ThemeColors } from "./types";
+import { MAX_CHART_EXERCISES } from "./types";
 
 interface ExercisePickerModalProps {
   visible: boolean;
@@ -14,6 +15,7 @@ interface ExercisePickerModalProps {
   selectedExercises: { name: string; color: string }[];
   colors: ThemeColors;
   onSelect: (exerciseName: string) => void;
+  onRemove: (exerciseName: string) => void;
   onClose: () => void;
 }
 
@@ -23,8 +25,11 @@ export function ExercisePickerModal({
   selectedExercises,
   colors,
   onSelect,
+  onRemove,
   onClose,
 }: ExercisePickerModalProps) {
+  const atMax = selectedExercises.length >= MAX_CHART_EXERCISES;
+
   return (
     <Modal
       visible={visible}
@@ -36,12 +41,15 @@ export function ExercisePickerModal({
         <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              Select Exercise
+              Select Exercises
             </Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={[styles.closeText, { color: colors.tint }]}>✕</Text>
+              <Text style={[styles.doneText, { color: colors.tint }]}>Done</Text>
             </TouchableOpacity>
           </View>
+          <Text style={[styles.hintText, { color: colors.textSecondary }]}>
+            {selectedExercises.length}/{MAX_CHART_EXERCISES} selected - tap to toggle
+          </Text>
           <ScrollView style={styles.exerciseList}>
             {exercises.length === 0 ? (
               <Text style={[styles.noExercisesText, { color: colors.textSecondary }]}>
@@ -50,6 +58,7 @@ export function ExercisePickerModal({
             ) : (
               exercises.map((exercise) => {
                 const isSelected = selectedExercises.find((e) => e.name === exercise.name);
+                const disabled = !isSelected && atMax;
                 return (
                   <TouchableOpacity
                     key={exercise.name}
@@ -57,14 +66,16 @@ export function ExercisePickerModal({
                       styles.exerciseListItem,
                       { borderBottomColor: colors.border },
                       isSelected && { backgroundColor: `${colors.tint}20` },
+                      disabled && styles.exerciseListItemDisabled,
                     ]}
                     onPress={() => {
-                      if (!isSelected) {
+                      if (isSelected) {
+                        onRemove(exercise.name);
+                      } else if (!atMax) {
                         onSelect(exercise.name);
                       }
-                      onClose();
                     }}
-                    disabled={!!isSelected}
+                    disabled={disabled}
                     activeOpacity={0.7}
                   >
                     <Text style={[styles.exerciseListText, { color: colors.text }]}>
@@ -109,10 +120,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
-  closeText: {
-    fontSize: 28,
-    fontWeight: "400",
-    lineHeight: 32,
+  doneText: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  hintText: {
+    fontSize: 13,
+    textAlign: "center",
+    paddingVertical: 10,
   },
   exerciseList: {
     paddingHorizontal: 16,
@@ -124,6 +139,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderBottomWidth: 1,
+  },
+  exerciseListItemDisabled: {
+    opacity: 0.4,
   },
   exerciseListText: {
     fontSize: 16,
