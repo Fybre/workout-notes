@@ -10,6 +10,9 @@ import {
   TouchableOpacity,
 } from "react-native";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { SelectModal } from "@/components/SelectModal";
 import { Text, View } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
@@ -20,7 +23,6 @@ import {
   updateExerciseDefinition,
 } from "@/db/database";
 import type { ExerciseType } from "@/types/workout";
-import { Picker } from "@react-native-picker/picker";
 import { Modal } from "react-native";
 
 interface ExerciseDefinition {
@@ -38,6 +40,7 @@ export default function ManageExercisesScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
+  const insets = useSafeAreaInsets();
 
   const [exercises, setExercises] = useState<ExerciseDefinition[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,6 +56,7 @@ export default function ManageExercisesScreen() {
 
   // Bulk category change state
   const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
+  const [showBulkCategorySelector, setShowBulkCategorySelector] = useState(false);
   const [bulkCategory, setBulkCategory] = useState("");
   const [isBulkCustomCategory, setIsBulkCustomCategory] = useState(false);
   const [bulkCustomCategory, setBulkCustomCategory] = useState("");
@@ -258,6 +262,7 @@ export default function ManageExercisesScreen() {
           {
             backgroundColor: colors.background,
             borderBottomColor: colors.border,
+            paddingTop: insets.top + 10,
           },
         ]}
       >
@@ -514,37 +519,29 @@ export default function ManageExercisesScreen() {
               Change Category for {selectedIds.size} Exercise(s)
             </Text>
 
-            <RNView
+            <TouchableOpacity
               style={[
-                styles.pickerContainer,
+                styles.selectField,
                 {
                   backgroundColor: colors.surface,
                   borderColor: colors.border,
                   marginBottom: 16,
                 },
               ]}
+              onPress={() => setShowBulkCategorySelector(true)}
+              activeOpacity={0.7}
             >
-              <Picker
-                selectedValue={
-                  isBulkCustomCategory ? "__CUSTOM__" : bulkCategory
-                }
-                onValueChange={(value) => {
-                  if (value === "__CUSTOM__") {
-                    setIsBulkCustomCategory(true);
-                  } else {
-                    setIsBulkCustomCategory(false);
-                    setBulkCategory(value);
-                  }
-                }}
-                style={{ color: colors.text }}
-                dropdownIconColor={colors.tint}
-              >
-                {categories.map((cat) => (
-                  <Picker.Item key={cat} label={cat} value={cat} />
-                ))}
-                <Picker.Item label="+ New Category" value="__CUSTOM__" />
-              </Picker>
-            </RNView>
+              <Text style={[styles.selectFieldText, { color: colors.text }]}>
+                {isBulkCustomCategory
+                  ? bulkCustomCategory || "New Category"
+                  : bulkCategory || "Select a category"}
+              </Text>
+              <FontAwesome
+                name="chevron-down"
+                size={14}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
 
             {isBulkCustomCategory && (
               <TextInput
@@ -585,6 +582,26 @@ export default function ManageExercisesScreen() {
           </View>
         </View>
       </Modal>
+
+      <SelectModal
+        visible={showBulkCategorySelector}
+        title="Category"
+        options={[
+          ...categories.map((cat) => ({ label: cat, value: cat })),
+          { label: "+ New Category", value: "__CUSTOM__" },
+        ]}
+        selectedValue={isBulkCustomCategory ? "__CUSTOM__" : bulkCategory}
+        onSelect={(value) => {
+          setShowBulkCategorySelector(false);
+          if (value === "__CUSTOM__") {
+            setIsBulkCustomCategory(true);
+          } else {
+            setIsBulkCustomCategory(false);
+            setBulkCategory(value);
+          }
+        }}
+        onClose={() => setShowBulkCategorySelector(false)}
+      />
     </View>
   );
 }
@@ -597,7 +614,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
@@ -773,10 +789,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
   },
-  pickerContainer: {
+  selectField: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: 48,
     borderWidth: 1,
     borderRadius: 10,
-    overflow: "hidden",
+    paddingHorizontal: 14,
+  },
+  selectFieldText: {
+    fontSize: 16,
+    flex: 1,
+    marginRight: 8,
   },
   modalButton: {
     paddingHorizontal: 20,

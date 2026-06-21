@@ -608,6 +608,64 @@ export async function getPersonalBestForExercise(
   });
 }
 
+/**
+ * Batched version of getPersonalBestForExercise for when you need the PB for
+ * several exercises at once (e.g. rendering a whole day's list) - issues a
+ * single query instead of one definition-lookup + one full-history scan per
+ * exercise. Excludes `excludeDate` the same way the per-exercise version does
+ * (so "today" can be compared against the prior personal best).
+ */
+export async function getPersonalBestsForDefinitions(
+  definitions: { definitionId: string; type: ExerciseType }[],
+  excludeDate?: string,
+): Promise<Record<string, Set | null>> {
+  const db = getDatabase();
+
+  if (definitions.length === 0) return {};
+
+  const ids = definitions.map((d) => d.definitionId);
+  const placeholders = ids.map(() => "?").join(",");
+
+  const query = excludeDate
+    ? `SELECT s.*, e.definitionId as definitionId FROM sets s
+       JOIN exercises e ON s.exerciseId = e.id
+       WHERE e.definitionId IN (${placeholders}) AND e.date != ?`
+    : `SELECT s.*, e.definitionId as definitionId FROM sets s
+       JOIN exercises e ON s.exerciseId = e.id
+       WHERE e.definitionId IN (${placeholders})`;
+
+  const params = excludeDate ? [...ids, excludeDate] : ids;
+
+  const rows = await db.getAllAsync<Set & { definitionId: string }>(
+    query,
+    params,
+  );
+
+  const setsByDefinition = new Map<string, (Set & { definitionId: string })[]>();
+  for (const row of rows) {
+    const group = setsByDefinition.get(row.definitionId);
+    if (group) {
+      group.push(row);
+    } else {
+      setsByDefinition.set(row.definitionId, [row]);
+    }
+  }
+
+  const result: Record<string, Set | null> = {};
+  for (const def of definitions) {
+    const sets = setsByDefinition.get(def.definitionId);
+    if (!sets || sets.length === 0) {
+      result[def.definitionId] = null;
+      continue;
+    }
+    result[def.definitionId] = sets.reduce((best, current) =>
+      compareSets(current, best, def.type) > 0 ? current : best,
+    );
+  }
+
+  return result;
+}
+
 // Get the most recent exercise for a given exercise name (excluding today if specified)
 export async function getLastExerciseByName(
   exerciseName: string,

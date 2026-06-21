@@ -232,13 +232,22 @@ export function useCalendarData() {
         const newChartData: Record<string, ChartDataPoint[]> = {};
         const newExerciseHistory: Record<string, { date: string; sets: import("@/types/workout").Set[] }[]> = {};
 
-        for (const exercise of selectedExercises) {
-          const [history, detailedHistory] = await Promise.all([
-            getExerciseHistoryForChart(exercise.name, startDate, endDate),
-            getExerciseHistoryWithSetsInRange(exercise.name, startDate, endDate),
-          ]);
-          newChartData[exercise.name] = history;
-          newExerciseHistory[exercise.name] = detailedHistory;
+        // Fetch all selected exercises' chart/history data in parallel
+        // instead of one at a time (was serializing up to 5 exercises x 2
+        // queries each into a single sequential chain)
+        const results = await Promise.all(
+          selectedExercises.map(async (exercise) => {
+            const [history, detailedHistory] = await Promise.all([
+              getExerciseHistoryForChart(exercise.name, startDate, endDate),
+              getExerciseHistoryWithSetsInRange(exercise.name, startDate, endDate),
+            ]);
+            return { name: exercise.name, history, detailedHistory };
+          }),
+        );
+
+        for (const result of results) {
+          newChartData[result.name] = result.history;
+          newExerciseHistory[result.name] = result.detailedHistory;
         }
         setChartData(newChartData);
         setExerciseHistory(newExerciseHistory);

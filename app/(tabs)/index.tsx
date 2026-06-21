@@ -25,7 +25,7 @@ import {
   createTemplate,
   deleteExercise,
   getExercisesForDate,
-  getPersonalBestForExercise,
+  getPersonalBestsForDefinitions,
 } from "@/db/database";
 import { exportAndShareCsv } from "@/db/export";
 import { useCurrentDate, useDateNavigation } from "@/hooks/useDateNavigation";
@@ -73,47 +73,52 @@ export default function HomeScreen() {
         try {
           const data = await getExercisesForDate(date);
 
+          // Get personal bests (excluding today) for every shown exercise in
+          // a single query, instead of one definition-lookup + one
+          // full-history scan per exercise
+          const personalBests = await getPersonalBestsForDefinitions(
+            data.map((exercise) => ({
+              definitionId: exercise.definitionId,
+              type: exercise.type as ExerciseType,
+            })),
+            date,
+          );
+
           // Add Personal Best detection
-          const exercisesWithPB = await Promise.all(
-            data.map(async (exercise) => {
-              // Get personal best excluding today's data to check if today's sets are new PBs
-              const personalBest = await getPersonalBestForExercise(
-                exercise.name,
-                date,
-              );
+          const exercisesWithPB = data.map((exercise) => {
+            const personalBest = personalBests[exercise.definitionId];
 
-              // Find the best set from today's exercise
-              const bestSetId = findBestSetId(
-                exercise.sets.map((s) => ({ ...s })),
-                exercise.type as ExerciseType,
-              );
+            // Find the best set from today's exercise
+            const bestSetId = findBestSetId(
+              exercise.sets.map((s) => ({ ...s })),
+              exercise.type as ExerciseType,
+            );
 
-              // Mark sets as PB
-              const setsWithPB = exercise.sets.map((set) => {
-                let isPB = false;
+            // Mark sets as PB
+            const setsWithPB = exercise.sets.map((set) => {
+              let isPB = false;
 
-                if (set.id === bestSetId && personalBest) {
-                  // Check if this set beats the historical personal best
-                  isPB =
-                    compareSets(set, personalBest, exercise.type as ExerciseType) > 0;
-                } else if (set.id === bestSetId && !personalBest) {
-                  // First set ever is a PB
-                  isPB = true;
-                }
-
-                return {
-                  ...set,
-                  isPersonalBest: isPB,
-                };
-              });
+              if (set.id === bestSetId && personalBest) {
+                // Check if this set beats the historical personal best
+                isPB =
+                  compareSets(set, personalBest, exercise.type as ExerciseType) > 0;
+              } else if (set.id === bestSetId && !personalBest) {
+                // First set ever is a PB
+                isPB = true;
+              }
 
               return {
-                ...exercise,
-                type: exercise.type as ExerciseType,
-                sets: setsWithPB,
+                ...set,
+                isPersonalBest: isPB,
               };
-            }),
-          );
+            });
+
+            return {
+              ...exercise,
+              type: exercise.type as ExerciseType,
+              sets: setsWithPB,
+            };
+          });
 
           setExercises(exercisesWithPB as Exercise[]);
 

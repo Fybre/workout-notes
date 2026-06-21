@@ -131,36 +131,3 @@ export function findBestSetId(
 
   return bestSet.id;
 }
-
-/**
- * Get comparison description for exercise type
- * Useful for UI tooltips or info text
- */
-export function getComparisonDescription(exerciseType: ExerciseType): string {
-  switch (exerciseType) {
-    case "weight_reps":
-      return "Higher weight is better. If tied, higher reps wins.";
-    case "weight":
-      return "Higher weight is better.";
-    case "reps":
-      return "More reps is better.";
-    case "distance":
-      return "Longer distance is better.";
-    case "distance_time":
-      return "Longer distance is better. If tied, faster time wins.";
-    case "weight_time":
-      return "Heavier weight is better. If tied, shorter time wins.";
-    case "reps_time":
-      return "More reps is better. If tied, shorter time wins.";
-    case "weight_distance":
-      return "Heavier weight is better. If tied, longer distance wins.";
-    case "reps_distance":
-      return "More reps is better. If tied, longer distance wins.";
-    case "time_duration":
-      return "Longer duration is better (holds/planks).";
-    case "time_speed":
-      return "Faster time is better (sprints).";
-    default:
-      return "";
-  }
-}

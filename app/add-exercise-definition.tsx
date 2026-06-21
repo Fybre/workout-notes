@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   View as RNView,
   ScrollView,
   StyleSheet,
@@ -59,10 +60,10 @@ export default function AddExerciseDefinitionScreen() {
   const [originalMediaUri, setOriginalMediaUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(!!editId);
 
-  const handleMediaChange = (media: ExerciseMedia | null) => {
+  const handleMediaChange = async (media: ExerciseMedia | null) => {
     // Clean up a previously picked-but-unsaved file before replacing it
     if (exercise.mediaUri && exercise.mediaUri !== originalMediaUri) {
-      deleteExerciseMediaFile(exercise.mediaUri);
+      await deleteExerciseMediaFile(exercise.mediaUri);
     }
     setExercise((prev) => ({
       ...prev,
@@ -71,12 +72,25 @@ export default function AddExerciseDefinitionScreen() {
     }));
   };
 
-  const handleDiscardAndClose = () => {
+  const handleDiscardAndClose = async () => {
     if (exercise.mediaUri && exercise.mediaUri !== originalMediaUri) {
-      deleteExerciseMediaFile(exercise.mediaUri);
+      await deleteExerciseMediaFile(exercise.mediaUri);
     }
     router.back();
   };
+
+  // Android's hardware back button bypasses the header's close button (and
+  // its media cleanup) entirely unless intercepted here
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        handleDiscardAndClose();
+        return true;
+      },
+    );
+    return () => subscription.remove();
+  }, [exercise.mediaUri, originalMediaUri]);
 
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [isCustomCategory, setIsCustomCategory] = useState(false);

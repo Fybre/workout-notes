@@ -57,13 +57,6 @@ export function isToday(dateStr: string): boolean {
 }
 
 /**
- * Check if two date strings represent the same date.
- */
-export function isSameDate(dateStr1: string, dateStr2: string): boolean {
-  return dateStr1 === dateStr2;
-}
-
-/**
  * Format a date string for display in the UI.
  * Example: "Wed, Jan 28, 2026"
  */

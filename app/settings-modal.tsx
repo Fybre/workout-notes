@@ -58,7 +58,7 @@ export default function SettingsModal() {
           setRestTimerSettings(JSON.parse(saved));
         }
       } catch (error) {
-
+        console.warn("[Settings] Failed to load rest timer settings:", error);
       }
     };
 
