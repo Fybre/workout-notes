@@ -12,6 +12,21 @@ export function formatTime(seconds: number): string {
 }
 
 /**
+ * Format a millisecond duration (e.g. last set's timestamp minus the
+ * first's) as a human-readable workout length, like "1h 15m" or "45m".
+ */
+export function formatWorkoutDuration(durationMs: number): string {
+  const totalMinutes = Math.round(durationMs / 60000);
+  if (totalMinutes < 1) return "< 1m";
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) return `${minutes}m`;
+  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+/**
  * Format a set for display based on exercise type
  * Weight is always stored in kg, converted to user's unit for display
  */

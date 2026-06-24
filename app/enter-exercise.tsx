@@ -136,6 +136,13 @@ export default function EnterWorkoutScreen() {
   const [repsInputVisible, setRepsInputVisible] = useState(false);
   const [distanceInputVisible, setDistanceInputVisible] = useState(false);
   const [timeInputVisible, setTimeInputVisible] = useState(false);
+  // Raw text being typed for weight/distance, decoupled from the committed
+  // numeric state - without this, re-deriving the TextInput's `value` from
+  // the numeric state on every keystroke strips a trailing "." (and, in lbs
+  // mode, snaps to the nearest 0.5) before the user can type the digits
+  // after the decimal point, making fractional entry effectively impossible
+  const [weightInputText, setWeightInputText] = useState("");
+  const [distanceInputText, setDistanceInputText] = useState("");
   const [editingSet, setEditingSet] = useState<WorkoutSet | null>(null);
   const [exerciseId] = useState(() => paramExerciseId || generateId());
   const [exerciseSaved, setExerciseSaved] = useState(() => !!paramExerciseId);
@@ -992,11 +999,13 @@ export default function EnterWorkoutScreen() {
                       ]}
                       keyboardType="decimal-pad"
                       placeholder="Weight"
-                      value={(weightUnit === "lbs"
-                        ? kgToLbs(weightKg)
-                        : weightKg
-                      ).toString()}
-                      onChangeText={handleWeightChange}
+                      value={weightInputText}
+                      onChangeText={(text) => {
+                        setWeightInputText(text);
+                        if (/^\d*\.?\d*$/.test(text)) {
+                          handleWeightChange(text);
+                        }
+                      }}
                       onBlur={() => setWeightInputVisible(false)}
                       autoFocus
                       selectTextOnFocus
@@ -1004,7 +1013,12 @@ export default function EnterWorkoutScreen() {
                   ) : (
                     <TouchableOpacity
                       style={styles.numberField}
-                      onPress={() => setWeightInputVisible(true)}
+                      onPress={() => {
+                        const display =
+                          weightUnit === "lbs" ? kgToLbs(weightKg) : weightKg;
+                        setWeightInputText(weightKg === 0 ? "" : display.toString());
+                        setWeightInputVisible(true);
+                      }}
                       activeOpacity={0.7}
                     >
                       <Text style={[styles.numberText, { color: colors.text }]}>
@@ -1121,8 +1135,13 @@ export default function EnterWorkoutScreen() {
                       ]}
                       keyboardType="decimal-pad"
                       placeholder="Distance"
-                      value={distance.toString()}
-                      onChangeText={handleDistanceChange}
+                      value={distanceInputText}
+                      onChangeText={(text) => {
+                        setDistanceInputText(text);
+                        if (/^\d*\.?\d*$/.test(text)) {
+                          handleDistanceChange(text);
+                        }
+                      }}
                       onBlur={() => setDistanceInputVisible(false)}
                       autoFocus
                       selectTextOnFocus
@@ -1130,7 +1149,10 @@ export default function EnterWorkoutScreen() {
                   ) : (
                     <TouchableOpacity
                       style={styles.numberField}
-                      onPress={() => setDistanceInputVisible(true)}
+                      onPress={() => {
+                        setDistanceInputText(distance === 0 ? "" : distance.toString());
+                        setDistanceInputVisible(true);
+                      }}
                       activeOpacity={0.7}
                     >
                       <Text style={[styles.numberText, { color: colors.text }]}>

@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -299,6 +300,7 @@ export default function SelectExerciseScreen() {
   };
 
   const handleLongPressExercise = async (item: ExerciseItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setInfoExercise(item);
     setShowInfoModal(true);
 

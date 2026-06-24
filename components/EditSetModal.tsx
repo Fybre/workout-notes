@@ -63,6 +63,12 @@ export default function EditSetModal({
   const [repsInputVisible, setRepsInputVisible] = useState(false);
   const [distanceInputVisible, setDistanceInputVisible] = useState(false);
   const [timeInputVisible, setTimeInputVisible] = useState(false);
+  // Raw text being typed, decoupled from the committed numeric state -
+  // otherwise re-deriving the TextInput's `value` from the numeric state on
+  // every keystroke strips a trailing "." before the digits after the
+  // decimal point can be typed, making fractional entry impossible
+  const [weightInputText, setWeightInputText] = useState("");
+  const [distanceInputText, setDistanceInputText] = useState("");
 
   const fields = getExerciseTypeFields(exerciseType);
 
@@ -205,8 +211,13 @@ export default function EditSetModal({
                     ]}
                     keyboardType="decimal-pad"
                     placeholder="Weight"
-                    value={weight.toString()}
-                    onChangeText={handleWeightChange}
+                    value={weightInputText}
+                    onChangeText={(text) => {
+                      setWeightInputText(text);
+                      if (/^\d*\.?\d*$/.test(text)) {
+                        handleWeightChange(text);
+                      }
+                    }}
                     onBlur={() => setWeightInputVisible(false)}
                     autoFocus
                     selectTextOnFocus
@@ -214,7 +225,10 @@ export default function EditSetModal({
                 ) : (
                   <TouchableOpacity
                     style={styles.numberField}
-                    onPress={() => setWeightInputVisible(true)}
+                    onPress={() => {
+                      setWeightInputText(weight === 0 ? "" : weight.toString());
+                      setWeightInputVisible(true);
+                    }}
                     activeOpacity={0.7}
                   >
                     <Text style={[styles.numberText, { color: colors.text }]}>
@@ -323,8 +337,13 @@ export default function EditSetModal({
                     ]}
                     keyboardType="decimal-pad"
                     placeholder="Distance"
-                    value={distance.toString()}
-                    onChangeText={handleDistanceChange}
+                    value={distanceInputText}
+                    onChangeText={(text) => {
+                      setDistanceInputText(text);
+                      if (/^\d*\.?\d*$/.test(text)) {
+                        handleDistanceChange(text);
+                      }
+                    }}
                     onBlur={() => setDistanceInputVisible(false)}
                     autoFocus
                     selectTextOnFocus
@@ -332,7 +351,10 @@ export default function EditSetModal({
                 ) : (
                   <TouchableOpacity
                     style={styles.numberField}
-                    onPress={() => setDistanceInputVisible(true)}
+                    onPress={() => {
+                      setDistanceInputText(distance === 0 ? "" : distance.toString());
+                      setDistanceInputVisible(true);
+                    }}
                     activeOpacity={0.7}
                   >
                     <Text style={[styles.numberText, { color: colors.text }]}>

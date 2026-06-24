@@ -84,17 +84,26 @@ export function ChartsView({
       const history = chartData[exercise.name] || [];
       const dataMap = new Map(history.map((h) => [h.date, h]));
 
-      const data: number[] = sortedDates.map((date) => {
+      // Use null (not 0) for dates this exercise wasn't logged on the
+      // shared x-axis is the union of every selected exercise's dates, so
+      // an exercise done less often than others would otherwise plot a
+      // misleading drop to zero on days it simply wasn't done at all.
+      // react-native-chart-kit's straight (non-bezier) line mode treats a
+      // null value as "hold the previous point" rather than plotting it.
+      const data = sortedDates.map((date) => {
         const point = dataMap.get(date);
-        if (!point) return 0;
+        if (!point) return null;
         return (point[chartMetric as keyof ChartDataPoint] as number) || 0;
       });
 
       return {
-        data,
+        data: data as unknown as number[],
         color: () => exercise.color,
         strokeWidth: 2,
-        withDots: true,
+        // Dots aren't gap-aware in this library (they'd still draw at the
+        // zero baseline for the null/missing dates above), so they're
+        // disabled rather than showing a misleading dot on days not logged
+        withDots: false,
       };
     });
 
@@ -299,7 +308,6 @@ export function ChartsView({
               propsForDots: { r: "4", strokeWidth: "2", stroke: colors.background },
               propsForBackgroundLines: { stroke: colors.border, strokeWidth: 1, strokeDasharray: "3,3" },
             }}
-            bezier
             style={styles.chart}
           />
           <Text style={[styles.yAxisLabel, { color: colors.textSecondary }]}>{getMetricLabel()}</Text>

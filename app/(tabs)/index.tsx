@@ -31,7 +31,7 @@ import { exportAndShareCsv } from "@/db/export";
 import { useCurrentDate, useDateNavigation } from "@/hooks/useDateNavigation";
 import type { Exercise, ExerciseType } from "@/types";
 import { formatRelativeDate, isToday } from "@/utils/date";
-import { formatSetForDisplay } from "@/utils/format";
+import { formatSetForDisplay, formatWorkoutDuration } from "@/utils/format";
 import { useUnits } from "@/contexts/UnitContext";
 import { findBestSetId, compareSets } from "@/utils/pb-utils";
 import { kgToLbs, kmToMiles } from "@/utils/units";
@@ -162,6 +162,24 @@ export default function HomeScreen() {
       }
     });
     return Array.from(uniqueCategories).sort();
+  }, [exercises]);
+
+  // Total workout duration for the day: last logged set's timestamp minus
+  // the first's, across every exercise shown (not per-exercise)
+  const workoutDurationLabel = useMemo(() => {
+    const timestamps: number[] = [];
+    for (const exercise of exercises) {
+      for (const set of exercise.sets) {
+        if (set.timestamp) timestamps.push(set.timestamp);
+      }
+    }
+
+    if (timestamps.length < 2) return null;
+
+    const durationMs = Math.max(...timestamps) - Math.min(...timestamps);
+    if (durationMs <= 0) return null;
+
+    return formatWorkoutDuration(durationMs);
   }, [exercises]);
 
   // Handle menu toggle
@@ -358,6 +376,16 @@ export default function HomeScreen() {
               <Text style={[styles.dateText, { color: colors.text }]}>
                 {dateString}
               </Text>
+              {workoutDurationLabel && (
+                <Text
+                  style={[
+                    styles.workoutDurationText,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Workout: {workoutDurationLabel}
+                </Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               onPress={toggleMenu}
@@ -773,7 +801,13 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 24,
     fontWeight: "600",
-    textAlign: "center",
+    textAlign: "left",
+  },
+  workoutDurationText: {
+    fontSize: 13,
+    fontWeight: "500",
+    textAlign: "left",
+    marginTop: 2,
   },
   listContainer: {
     flex: 1,
