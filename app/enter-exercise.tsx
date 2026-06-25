@@ -2,11 +2,12 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Modal,
+  PanResponder,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -497,6 +498,27 @@ export default function EnterWorkoutScreen() {
     navigateToParent(sets);
   };
 
+  // Swipe right anywhere on the screen to go back, same as "Done". Uses the
+  // plain RN PanResponder (not react-native-gesture-handler's Gesture API)
+  // since the latter crashed in Expo Go. handleDone is recreated every
+  // render, but the PanResponder is only created once, so the callback
+  // reads through this ref (always kept current) instead of closing over a
+  // function that would otherwise go stale.
+  const handleDoneRef = useRef(handleDone);
+  handleDoneRef.current = handleDone;
+
+  const swipeBackPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        gestureState.dx > 60 && gestureState.dx > Math.abs(gestureState.dy) * 2,
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > 80) {
+          handleDoneRef.current();
+        }
+      },
+    }),
+  ).current;
+
   // Parse voice input for weight, reps, and notes
   // Supports patterns like:
   // - "220 by 10" → weight: 220, reps: 10
@@ -825,7 +847,10 @@ export default function EnterWorkoutScreen() {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      {...swipeBackPanResponder.panHandlers}
+    >
       {/* Celebration Animation */}
       <Celebration
         visible={showCelebration}

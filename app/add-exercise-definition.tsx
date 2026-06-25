@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   BackHandler,
+  PanResponder,
   View as RNView,
   ScrollView,
   StyleSheet,
@@ -91,6 +92,27 @@ export default function AddExerciseDefinitionScreen() {
     );
     return () => subscription.remove();
   }, [exercise.mediaUri, originalMediaUri]);
+
+  // Swipe right anywhere on the screen to go back, same as the close button.
+  // Uses the plain RN PanResponder (not react-native-gesture-handler's
+  // Gesture API) since the latter crashed in Expo Go. handleDiscardAndClose
+  // is recreated every render, but the PanResponder is only created once,
+  // so the callback reads through this ref (always kept current) instead
+  // of closing over a function that would otherwise go stale.
+  const handleDiscardAndCloseRef = useRef(handleDiscardAndClose);
+  handleDiscardAndCloseRef.current = handleDiscardAndClose;
+
+  const swipeBackPanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        gestureState.dx > 60 && gestureState.dx > Math.abs(gestureState.dy) * 2,
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > 80) {
+          handleDiscardAndCloseRef.current();
+        }
+      },
+    }),
+  ).current;
 
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
@@ -302,7 +324,10 @@ export default function AddExerciseDefinitionScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background }]}
+      {...swipeBackPanResponder.panHandlers}
+    >
       {/* Header */}
       <View
         style={[

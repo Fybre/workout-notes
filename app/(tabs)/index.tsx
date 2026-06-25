@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  PanResponder,
   Text as RNText,
   TextInput,
   View as RNView,
@@ -55,7 +56,7 @@ export default function HomeScreen() {
 
   // Use centralized date hooks
   const date = useCurrentDate();
-  const { goToToday } = useDateNavigation();
+  const { goToToday, goToPrevDay, goToNextDay } = useDateNavigation();
 
   // Track exercise count per date so we only auto-scroll when a new exercise
   // was actually added (not on date navigation or unrelated refocus)
@@ -343,6 +344,36 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
+  // Swipe left/right anywhere on the screen to move to the next/previous
+  // day. Uses the plain RN PanResponder (not react-native-gesture-handler's
+  // Gesture API) since the latter crashed in Expo Go. Requires a
+  // deliberately large, mostly-horizontal movement before claiming the
+  // touch so it doesn't fight with the per-exercise-row swipe-to-delete
+  // gesture (which only needs a small drag) or normal vertical scrolling.
+  // goToNextDay/goToPrevDay are recreated every time `date` changes, but the
+  // PanResponder below is only created once - so its callback reads through
+  // these refs (always kept current) rather than closing over the
+  // functions directly, which would otherwise go stale after the first swipe
+  const goToNextDayRef = useRef(goToNextDay);
+  goToNextDayRef.current = goToNextDay;
+  const goToPrevDayRef = useRef(goToPrevDay);
+  goToPrevDayRef.current = goToPrevDay;
+
+  const daySwipePanResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 60 &&
+        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2,
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < -80) {
+          goToNextDayRef.current();
+        } else if (gestureState.dx > 80) {
+          goToPrevDayRef.current();
+        }
+      },
+    }),
+  ).current;
+
   if (!dbReady) {
     return (
       <View
@@ -359,7 +390,10 @@ export default function HomeScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View
+        style={[styles.container, { backgroundColor: colors.background }]}
+        {...daySwipePanResponder.panHandlers}
+      >
         {/* Header: Today's Date - Tappable to reset to today */}
         <View
           style={[
